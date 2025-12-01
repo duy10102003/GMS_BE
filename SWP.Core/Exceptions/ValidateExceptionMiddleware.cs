@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Swp.Core.Exceptions
+namespace SWP.Core.Exceptions
 {
     /// <summary>
     /// Custom middleware xử lý Validate exception

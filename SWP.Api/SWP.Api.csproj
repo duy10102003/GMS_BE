@@ -11,4 +11,13 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Controllers\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SWP.Core\SWP.Core.csproj" />
+    <ProjectReference Include="..\SWP.Infrastructure\SWP.Infrastructure.csproj" />
+  </ItemGroup>
+
 </Project>
