@@ -1,4 +1,10 @@
-﻿using Swp.Core.Exceptions;
+﻿using SWP.Core.Exceptions;
+using SWP.Core.Interfaces.Repositories;
+using SWP.Core.Interfaces.Services;
+using SWP.Core.Services;
+using SWP.Core.Entities;
+using SWP.Infrastructure.Repositories;
+using MISA.QLSX.Infrastructure.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 // Cấu hình Dapper để tự động map snake_case sang PascalCase
@@ -9,14 +15,19 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
 //Đăng ký Service
-//builder.Services.AddScoped<IEmployeeService, EmployeeService>();
-//builder.Services.AddScoped<IRoleService, RoleService>();
-//builder.Services.AddScoped<IWorkShiftService, WorkShiftService>();
+builder.Services.AddScoped<IServiceTicketService, ServiceTicketService>();
+
 //Đăng ký Repo
-//builder.Services.AddScoped<IEmployeeRepo, EmployeeRepo>();
-//builder.Services.AddScoped<IRoleRepo, RoleRepo>();
-//builder.Services.AddScoped<IWorkShiftRepo, WorkShiftRepo>();
+builder.Services.AddScoped<IServiceTicketRepo, ServiceTicketRepo>();
+builder.Services.AddScoped<IBaseRepo<User>, BaseRepo<User>>();
+builder.Services.AddScoped<IBaseRepo<Vehicle>, BaseRepo<Vehicle>>();
+builder.Services.AddScoped<IBaseRepo<Part>, BaseRepo<Part>>();
+builder.Services.AddScoped<IBaseRepo<Booking>, BaseRepo<Booking>>();
+builder.Services.AddScoped<IBaseRepo<Customer>, BaseRepo<Customer>>();
+builder.Services.AddScoped<IBaseRepo<ServiceTicketDetail>, BaseRepo<ServiceTicketDetail>>();
+builder.Services.AddScoped<IBaseRepo<TechnicalTask>, BaseRepo<TechnicalTask>>();
 //Khai báo cross để FE gọi đến 
 builder.Services.AddCors(options =>
 {
