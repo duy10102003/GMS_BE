@@ -1,0 +1,57 @@
+# .NET build results
+bin/
+obj/
+out/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Rider, VSCode, VS
+.idea/
+.vscode/
+*.vs/
+
+# ASP.NET temporary files
+wwwroot/
+**/wwwroot/dist/
+**/wwwroot/node_modules/
+
+# Logs and database temp files
+*.log
+*.db
+*.mdf
+*.ldf
+*.sqlite
+*.sqlite3
+
+# Entity Framework migrations
+Migrations/
+
+# Secret files (add your own file storing secrets)
+secrets.json
+appsettings.Development.json
+appsettings.Local.json
+.env
+
+# Docker artifacts
+docker-compose.override.yml
+.env.*
+
+# NPM
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# Ignore generated files
+*.generated.cs
+
+# macOS, Linux
+.DS_Store
+.cache/
+Thumbs.db
+
+# Don’t ignore:
+!appsettings.json
