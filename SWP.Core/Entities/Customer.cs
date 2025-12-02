@@ -9,20 +9,26 @@ namespace SWP.Core.Entities
     {
         [Column("customer_id")]
         [Key]
-        public Guid CustomerId { get; set; }
+        public int CustomerId { get; set; }
 
         [Column("customer_name")]
+        [MaxLength(100)]
         public string? CustomerName { get; set; }
 
         [Column("customer_phone")]
         [Required]
+        [MaxLength(20)]
         public string CustomerPhone { get; set; } = string.Empty;
 
         [Column("customer_email")]
+        [MaxLength(50)]
         public string? CustomerEmail { get; set; }
 
         [Column("user_id")]
-        public Guid? UserId { get; set; }
+        public int? UserId { get; set; }
+
+        [Column("is_deleted")]
+        public int IsDeleted { get; set; } = 0;
 
         // Navigation properties
         public User? User { get; set; }
@@ -31,4 +37,3 @@ namespace SWP.Core.Entities
         public ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
     }
 }
-

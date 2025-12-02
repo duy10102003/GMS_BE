@@ -9,11 +9,11 @@ namespace SWP.Core.Entities
     {
         [Column("user_token_id")]
         [Key]
-        public Guid UserTokenId { get; set; }
+        public int UserTokenId { get; set; }
 
         [Column("user_id")]
         [Required]
-        public Guid UserId { get; set; }
+        public int UserId { get; set; }
 
         [Column("access_token")]
         [MaxLength(512)]
@@ -37,8 +37,10 @@ namespace SWP.Core.Entities
         [Column("expires_at")]
         public DateTime? ExpiresAt { get; set; }
 
+        [Column("is_deleted")]
+        public int IsDeleted { get; set; } = 0;
+
         // Navigation properties
         public User User { get; set; } = null!;
     }
 }
-

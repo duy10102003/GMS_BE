@@ -9,59 +9,40 @@ namespace SWP.Core.Entities
     {
         [Column("part_id")]
         [Key]
-        public Guid PartId { get; set; }
+        public int PartId { get; set; }
 
         [Column("part_name")]
         [Required]
+        [MaxLength(100)]
         public string PartName { get; set; } = string.Empty;
-
-        [Column("part_price", TypeName = "decimal(24,2)")]
-        [Required]
-        public decimal PartPrice { get; set; }
 
         [Column("part_code")]
         [Required]
         [MaxLength(20)]
         public string PartCode { get; set; } = string.Empty;
 
-        [Column("number_month_warranty")]
+        [Column("part_stock")]
         [Required]
-        public int NumberMonthWarranty { get; set; }
-
-        [Column("part_quantity")]
-        [Required]
-        public int PartQuantity { get; set; }
+        public int PartStock { get; set; }
 
         [Column("part_unit")]
         [Required]
         [MaxLength(20)]
         public string PartUnit { get; set; } = string.Empty;
 
-        [Column("created_date")]
+        [Column("supplier_id")]
         [Required]
-        public DateTime CreatedDate { get; set; }
+        public int SupplierId { get; set; }
 
-        [Column("created_by")]
-        [Required]
-        public Guid CreatedBy { get; set; }
-
-        [Column("modified_date")]
-        [Required]
-        public DateTime ModifiedDate { get; set; }
-
-        [Column("modified_by")]
-        [Required]
-        public Guid ModifiedBy { get; set; }
-
-        [Column("part_stock")]
-        [Required]
-        public int PartStock { get; set; }
+        [Column("is_deleted")]
+        public int IsDeleted { get; set; } = 0;
 
         // Navigation properties
-        public User CreatedByUser { get; set; } = null!;
-        public User ModifiedByUser { get; set; } = null!;
+        public Supplier Supplier { get; set; } = null!;
+        public Inventory? Inventory { get; set; }
         public ICollection<ServiceTicketDetail> ServiceTicketDetails { get; set; } = new List<ServiceTicketDetail>();
-        public ICollection<PartStockRequestItem> PartStockRequestItems { get; set; } = new List<PartStockRequestItem>();
+        public ICollection<PartStockInItem> PartStockInItems { get; set; } = new List<PartStockInItem>();
+        public ICollection<PartStockOutItem> PartStockOutItems { get; set; } = new List<PartStockOutItem>();
+        public ICollection<PartPriceHistory> PartPriceHistories { get; set; } = new List<PartPriceHistory>();
     }
 }
-

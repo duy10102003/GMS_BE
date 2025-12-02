@@ -9,11 +9,11 @@ namespace SWP.Core.Entities
     {
         [Column("otp_verification_id")]
         [Key]
-        public Guid OtpVerificationId { get; set; }
+        public int OtpVerificationId { get; set; }
 
         [Column("user_id")]
         [Required]
-        public Guid UserId { get; set; }
+        public int UserId { get; set; }
 
         [Column("email")]
         [Required]
@@ -55,4 +55,3 @@ namespace SWP.Core.Entities
         public User User { get; set; } = null!;
     }
 }
-

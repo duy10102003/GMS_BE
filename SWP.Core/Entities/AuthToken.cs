@@ -9,7 +9,7 @@ namespace SWP.Core.Entities
     {
         [Column("token_id")]
         [Key]
-        public Guid TokenId { get; set; }
+        public int TokenId { get; set; }
 
         [Column("token")]
         [Required]
@@ -23,7 +23,7 @@ namespace SWP.Core.Entities
 
         [Column("user_id")]
         [Required]
-        public Guid UserId { get; set; }
+        public int UserId { get; set; }
 
         [Column("created_at")]
         [Required]
@@ -41,4 +41,3 @@ namespace SWP.Core.Entities
         public User User { get; set; } = null!;
     }
 }
-

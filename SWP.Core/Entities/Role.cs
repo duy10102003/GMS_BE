@@ -1,11 +1,6 @@
 ﻿using SWP.Core.GMSAttribute;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SWP.Core.Entities
 {
@@ -14,13 +9,17 @@ namespace SWP.Core.Entities
     {
         [Column("role_id")]
         [Key]
-        public Guid RoleId { get; set; }
+        public int RoleId { get; set; }
 
         [Column("role_name")]
-        public string RoleName { get; set; }
+        [Required]
+        public string RoleName { get; set; } = string.Empty;
 
         [Column("description")]
         [MaxLength(255)]
         public string? Description { get; set; }
+
+        [Column("is_deleted")]
+        public int IsDeleted { get; set; } = 0;
     }
 }

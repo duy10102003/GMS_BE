@@ -9,7 +9,7 @@ namespace SWP.Core.Entities
     {
         [Column("log_id")]
         [Key]
-        public Guid LogId { get; set; }
+        public int LogId { get; set; }
 
         [Column("action")]
         [MaxLength(255)]
@@ -19,10 +19,9 @@ namespace SWP.Core.Entities
         public DateTime? CreatedAt { get; set; }
 
         [Column("user_id")]
-        public Guid? UserId { get; set; }
+        public int? UserId { get; set; }
 
         // Navigation properties
         public User? User { get; set; }
     }
 }
-

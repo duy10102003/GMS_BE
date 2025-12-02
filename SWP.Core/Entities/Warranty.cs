@@ -9,11 +9,11 @@ namespace SWP.Core.Entities
     {
         [Column("warranty_id")]
         [Key]
-        public Guid WarrantyId { get; set; }
+        public int WarrantyId { get; set; }
 
         [Column("service_ticket_detail_id")]
         [Required]
-        public Guid ServiceTicketDetailId { get; set; }
+        public int ServiceTicketDetailId { get; set; }
 
         [Column("start_date")]
         [Required]
@@ -26,8 +26,10 @@ namespace SWP.Core.Entities
         [Column("status")]
         public byte? Status { get; set; }
 
+        [Column("is_deleted")]
+        public int IsDeleted { get; set; } = 0;
+
         // Navigation properties
         public ServiceTicketDetail ServiceTicketDetail { get; set; } = null!;
     }
 }
-

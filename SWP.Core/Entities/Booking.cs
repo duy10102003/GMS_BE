@@ -9,17 +9,18 @@ namespace SWP.Core.Entities
     {
         [Column("booking_id")]
         [Key]
-        public Guid BookingId { get; set; }
+        public int BookingId { get; set; }
 
         [Column("customer_id")]
         [Required]
-        public Guid CustomerId { get; set; }
+        public int CustomerId { get; set; }
 
         [Column("booking_time")]
         [Required]
         public DateTime BookingTime { get; set; }
 
         [Column("vehicle_name")]
+        [MaxLength(255)]
         public string? VehicleName { get; set; }
 
         [Column("booking_status")]
@@ -34,9 +35,11 @@ namespace SWP.Core.Entities
         [Column("modified_date")]
         public DateTime? ModifiedDate { get; set; }
 
+        [Column("is_deleted")]
+        public int IsDeleted { get; set; } = 0;
+
         // Navigation properties
         public Customer Customer { get; set; } = null!;
         public ICollection<ServiceTicket> ServiceTickets { get; set; } = new List<ServiceTicket>();
     }
 }
-

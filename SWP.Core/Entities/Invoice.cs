@@ -9,21 +9,24 @@ namespace SWP.Core.Entities
     {
         [Column("invoice_id")]
         [Key]
-        public Guid InvoiceId { get; set; }
+        public int InvoiceId { get; set; }
 
         [Column("service_ticket_id")]
         [Required]
-        public Guid ServiceTicketId { get; set; }
+        public int ServiceTicketId { get; set; }
 
         [Column("customer_id")]
         [Required]
-        public Guid CustomerId { get; set; }
+        public int CustomerId { get; set; }
 
         [Column("issue_date")]
         public DateTime? IssueDate { get; set; }
 
         [Column("parts_amount", TypeName = "decimal(24,2)")]
         public decimal PartsAmount { get; set; } = 0.00m;
+
+        [Column("garage_service_amount", TypeName = "decimal(24,2)")]
+        public decimal GarageServiceAmount { get; set; } = 0.00m;
 
         [Column("tax_amount", TypeName = "decimal(24,2)")]
         public decimal TaxAmount { get; set; } = 0.00m;
@@ -42,9 +45,11 @@ namespace SWP.Core.Entities
         [MaxLength(20)]
         public string? InvoiceCode { get; set; }
 
+        [Column("is_deleted")]
+        public int IsDeleted { get; set; } = 0;
+
         // Navigation properties
         public ServiceTicket ServiceTicket { get; set; } = null!;
         public Customer Customer { get; set; } = null!;
     }
 }
-
