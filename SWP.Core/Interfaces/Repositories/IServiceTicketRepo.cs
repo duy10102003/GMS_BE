@@ -47,8 +47,16 @@ namespace SWP.Core.Interfaces.Repositories
         /// <param name="mechanicId">ID của Mechanic</param>
         /// <returns>Chi tiết task</returns>
         Task<MechanicTaskDto?> GetMechanicTaskDetailAsync(int technicalTaskId, int mechanicId);
+
+        /// <summary>
+        /// Lấy danh sách Service Ticket Detail theo Service Ticket ID
+        /// </summary>
+        /// <param name="serviceTicketId">ID của Service Ticket</param>
+        /// <returns>Danh sách Service Ticket Detail</returns>
+        Task<List<ServiceTicketDetail>> GetServiceTicketDetailsAsync(int serviceTicketId);
     }
 }
+
 
 
 

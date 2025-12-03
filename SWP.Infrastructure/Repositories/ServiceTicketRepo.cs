@@ -50,7 +50,7 @@ namespace SWP.Infrastructure.Repositories
                     st.modified_by AS ModifiedBy,
                     u2.full_name AS ModifiedByName,
                     st.modified_date AS ModifiedDate,
-                    st.service_ticket_status AS ServiceTicketStatus,
+                    CAST(st.service_ticket_status AS UNSIGNED) AS ServiceTicketStatus,
                     st.initial_issue AS InitialIssue,
                     (SELECT tt.assigned_to_technical 
                      FROM technical_task tt 
@@ -204,7 +204,7 @@ namespace SWP.Infrastructure.Repositories
                     st.booking_id AS BookingId,
                     st.created_date AS CreatedDate,
                     st.modified_date AS ModifiedDate,
-                    st.service_ticket_status AS ServiceTicketStatus,
+                    CAST(st.service_ticket_status AS UNSIGNED) AS ServiceTicketStatus,
                     st.initial_issue AS InitialIssue
                 FROM service_ticket st
                 WHERE st.service_ticket_id = @Id AND st.is_deleted = 0";
@@ -259,27 +259,25 @@ namespace SWP.Infrastructure.Repositories
                     p.part_id AS PartId,
                     p.part_name AS PartName,
                     p.part_code AS PartCode,
-                    p.part_stock AS PartStock,
+                    p.part_quantity AS PartQuantity,
                     p.part_unit AS PartUnit,
-                    i.inventory_price AS InventoryPrice,
-                    s.supplier_id AS SupplierId,
-                    s.supplier_name AS SupplierName,
-                    s.supplier_code AS SupplierCode
+                    p.part_price AS PartPrice,
+                    pc.part_category_id AS PartCategoryId,
+                    pc.part_category_name AS PartCategoryName,
+                    pc.part_category_code AS PartCategoryCode
                 FROM service_ticket_detail std
                 INNER JOIN part p ON std.part_id = p.part_id
-                LEFT JOIN inventory i ON p.part_id = i.part_id AND i.is_deleted = 0
-                LEFT JOIN supplier s ON p.supplier_id = s.supplier_id AND s.is_deleted = 0
+                LEFT JOIN part_category pc ON p.part_category_id = pc.part_category_id
                 WHERE std.service_ticket_id = @Id AND std.is_deleted = 0 AND std.part_id IS NOT NULL AND p.is_deleted = 0";
 
             var servicesSql = @"
                 SELECT 
                     std.service_ticket_detail_id AS ServiceTicketDetailId,
-                    std.quantity AS Quantity,
                     gs.garage_service_id AS GarageServiceId,
                     gs.garage_service_name AS GarageServiceName,
                     gs.garage_service_price AS GarageServicePrice
-                FROM service_ticket_detail std
-                INNER JOIN garage_service gs ON std.garage_service_id = gs.garage_service_id
+                FROM `service_ticket_detail` std
+                INNER JOIN `garage_service` gs ON std.garage_service_id = gs.garage_service_id
                 WHERE std.service_ticket_id = @Id AND std.is_deleted = 0 AND std.garage_service_id IS NOT NULL AND gs.is_deleted = 0";
 
             var tasksSql = @"
@@ -289,7 +287,7 @@ namespace SWP.Infrastructure.Repositories
                     st.service_ticket_code AS ServiceTicketCode,
                     tt.description AS Description,
                     tt.assigned_at AS AssignedAt,
-                    tt.task_status AS TaskStatus,
+                    CAST(tt.task_status AS UNSIGNED) AS TaskStatus,
                     tt.confirmed_at AS ConfirmedAt,
                     u.user_id AS AssignedToTechnicalUserId,
                     u.full_name AS AssignedToTechnicalFullName,
@@ -310,11 +308,24 @@ namespace SWP.Infrastructure.Repositories
 
             using var connection = new MySqlConnection(_connection);
             
-            var detail = await connection.QueryFirstOrDefaultAsync<ServiceTicketDetailDto>(sql, parameters);
-            if (detail == null)
+            // Query vào dynamic object trước để xử lý type conversion
+            var detailData = await connection.QueryFirstOrDefaultAsync(sql, parameters);
+            if (detailData == null)
             {
                 return null;
             }
+            
+            // Map thủ công để xử lý type conversion
+            var detail = new ServiceTicketDetailDto
+            {
+                ServiceTicketId = detailData.ServiceTicketId,
+                ServiceTicketCode = detailData.ServiceTicketCode,
+                BookingId = detailData.BookingId,
+                CreatedDate = detailData.CreatedDate,
+                ModifiedDate = detailData.ModifiedDate,
+                ServiceTicketStatus = detailData.ServiceTicketStatus != null ? (byte?)Convert.ToByte(detailData.ServiceTicketStatus) : null,
+                InitialIssue = detailData.InitialIssue
+            };
 
             // Map vehicle info
             var vehicleInfo = await connection.QueryFirstOrDefaultAsync<VehicleInfoDto>(vehicleSql, parameters);
@@ -342,18 +353,18 @@ namespace SWP.Infrastructure.Repositories
                     PartId = row.PartId,
                     PartName = row.PartName ?? string.Empty,
                     PartCode = row.PartCode ?? string.Empty,
-                    InventoryPrice = row.InventoryPrice,
-                    PartStock = row.PartStock,
+                    PartPrice = row.PartPrice,
+                    PartQuantity = row.PartQuantity,
                     PartUnit = row.PartUnit ?? string.Empty
                 };
 
-                if (row.SupplierId != null)
+                if (row.PartCategoryId != null)
                 {
-                    partInfo.Supplier = new SupplierInfoDto
+                    partInfo.PartCategory = new PartCategoryInfoDto
                     {
-                        SupplierId = row.SupplierId,
-                        SupplierName = row.SupplierName ?? string.Empty,
-                        SupplierCode = row.SupplierCode ?? string.Empty
+                        PartCategoryId = row.PartCategoryId,
+                        PartCategoryName = row.PartCategoryName,
+                        PartCategoryCode = row.PartCategoryCode
                     };
                 }
 
@@ -377,7 +388,7 @@ namespace SWP.Infrastructure.Repositories
                     ServiceTicketCode = row.ServiceTicketCode,
                     Description = row.Description ?? string.Empty,
                     AssignedAt = row.AssignedAt,
-                    TaskStatus = row.TaskStatus,
+                    TaskStatus = row.TaskStatus != null ? (byte?)Convert.ToByte(row.TaskStatus) : null,
                     ConfirmedAt = row.ConfirmedAt
                 };
 
@@ -448,7 +459,7 @@ namespace SWP.Infrastructure.Repositories
                     st.service_ticket_code AS ServiceTicketCode,
                     tt.description AS Description,
                     tt.assigned_at AS AssignedAt,
-                    tt.task_status AS TaskStatus,
+                    CAST(tt.task_status AS UNSIGNED) AS TaskStatus,
                     tt.confirmed_at AS ConfirmedAt
                 FROM technical_task tt
                 INNER JOIN service_ticket st ON tt.service_ticket_id = st.service_ticket_id
@@ -605,7 +616,7 @@ namespace SWP.Infrastructure.Repositories
                     st.service_ticket_code AS ServiceTicketCode,
                     tt.description AS Description,
                     tt.assigned_at AS AssignedAt,
-                    tt.task_status AS TaskStatus,
+                    CAST(tt.task_status AS UNSIGNED) AS TaskStatus,
                     tt.confirmed_at AS ConfirmedAt
                 FROM technical_task tt
                 INNER JOIN service_ticket st ON tt.service_ticket_id = st.service_ticket_id
@@ -616,7 +627,7 @@ namespace SWP.Infrastructure.Repositories
                 SELECT 
                     st.service_ticket_id AS ServiceTicketId,
                     st.service_ticket_code AS ServiceTicketCode,
-                    st.service_ticket_status AS ServiceTicketStatus,
+                    CAST(st.service_ticket_status AS UNSIGNED) AS ServiceTicketStatus,
                     st.initial_issue AS InitialIssue,
                     v.vehicle_id AS VehicleId,
                     v.vehicle_name AS VehicleName,
@@ -640,28 +651,26 @@ namespace SWP.Infrastructure.Repositories
                     p.part_id AS PartId,
                     p.part_name AS PartName,
                     p.part_code AS PartCode,
-                    p.part_stock AS PartStock,
+                    p.part_quantity AS PartQuantity,
                     p.part_unit AS PartUnit,
-                    i.inventory_price AS InventoryPrice,
-                    s.supplier_id AS SupplierId,
-                    s.supplier_name AS SupplierName,
-                    s.supplier_code AS SupplierCode
+                    p.part_price AS PartPrice,
+                    pc.part_category_id AS PartCategoryId,
+                    pc.part_category_name AS PartCategoryName,
+                    pc.part_category_code AS PartCategoryCode
                 FROM service_ticket_detail std
                 INNER JOIN part p ON std.part_id = p.part_id
-                LEFT JOIN inventory i ON p.part_id = i.part_id AND i.is_deleted = 0
-                LEFT JOIN supplier s ON p.supplier_id = s.supplier_id AND s.is_deleted = 0
+                LEFT JOIN part_category pc ON p.part_category_id = pc.part_category_id
                 WHERE std.service_ticket_id = @ServiceTicketId AND std.is_deleted = 0 
                 AND std.part_id IS NOT NULL AND p.is_deleted = 0";
 
             var servicesSql = @"
                 SELECT 
                     std.service_ticket_detail_id AS ServiceTicketDetailId,
-                    std.quantity AS Quantity,
                     gs.garage_service_id AS GarageServiceId,
                     gs.garage_service_name AS GarageServiceName,
                     gs.garage_service_price AS GarageServicePrice
-                FROM service_ticket_detail std
-                INNER JOIN garage_service gs ON std.garage_service_id = gs.garage_service_id
+                FROM `service_ticket_detail` std
+                INNER JOIN `garage_service` gs ON std.garage_service_id = gs.garage_service_id
                 WHERE std.service_ticket_id = @ServiceTicketId AND std.is_deleted = 0 
                 AND std.garage_service_id IS NOT NULL AND gs.is_deleted = 0";
 
@@ -718,18 +727,18 @@ namespace SWP.Infrastructure.Repositories
                     PartId = row.PartId,
                     PartName = row.PartName ?? string.Empty,
                     PartCode = row.PartCode ?? string.Empty,
-                    InventoryPrice = row.InventoryPrice,
-                    PartStock = row.PartStock,
+                    PartPrice = row.PartPrice,
+                    PartQuantity = row.PartQuantity,
                     PartUnit = row.PartUnit ?? string.Empty
                 };
 
-                if (row.SupplierId != null)
+                if (row.PartCategoryId != null)
                 {
-                    partInfo.Supplier = new SupplierInfoDto
+                    partInfo.PartCategory = new PartCategoryInfoDto
                     {
-                        SupplierId = row.SupplierId,
-                        SupplierName = row.SupplierName ?? string.Empty,
-                        SupplierCode = row.SupplierCode ?? string.Empty
+                        PartCategoryId = row.PartCategoryId,
+                        PartCategoryName = row.PartCategoryName,
+                        PartCategoryCode = row.PartCategoryCode
                     };
                 }
 
@@ -807,6 +816,17 @@ namespace SWP.Infrastructure.Repositories
 
             // Nếu không có trong map, thử prefix với table prefix
             return $"{tablePrefix}.{columnName.ToLower()}";
+        }
+
+        /// <summary>
+        /// Lấy danh sách Service Ticket Detail theo Service Ticket ID
+        /// </summary>
+        public async Task<List<ServiceTicketDetail>> GetServiceTicketDetailsAsync(int serviceTicketId)
+        {
+            var sql = "SELECT * FROM `service_ticket_detail` WHERE `service_ticket_id` = @ServiceTicketId AND `is_deleted` = 0";
+            using var connection = new MySqlConnection(_connection);
+            var result = await connection.QueryAsync<ServiceTicketDetail>(sql, new { ServiceTicketId = serviceTicketId });
+            return result.ToList();
         }
     }
 }

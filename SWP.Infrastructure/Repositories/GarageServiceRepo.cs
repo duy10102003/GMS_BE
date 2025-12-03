@@ -208,6 +208,35 @@ namespace SWP.Infrastructure.Repositories
                 _ => ""
             };
         }
+
+        /// <summary>
+        /// Tìm kiếm Garage Service cho select (với search keyword)
+        /// </summary>
+        public async Task<List<GarageServiceSelectDto>> SearchForSelectAsync(GarageServiceSearchRequest request)
+        {
+            var sql = @"
+                SELECT 
+                    gs.garage_service_id AS GarageServiceId,
+                    gs.garage_service_name AS GarageServiceName,
+                    gs.garage_service_price AS GarageServicePrice
+                FROM `garage_service` gs
+                WHERE gs.is_deleted = 0";
+
+            var parameters = new DynamicParameters();
+
+            if (!string.IsNullOrWhiteSpace(request.SearchKeyword))
+            {
+                sql += " AND gs.garage_service_name LIKE @SearchKeyword";
+                parameters.Add("@SearchKeyword", $"%{request.SearchKeyword.Trim()}%");
+            }
+
+            sql += " ORDER BY gs.garage_service_name ASC LIMIT @Limit";
+            parameters.Add("@Limit", request.Limit);
+
+            using var connection = new MySqlConnection(_connection);
+            var result = await connection.QueryAsync<GarageServiceSelectDto>(sql, parameters);
+            return result.ToList();
+        }
     }
 }
 

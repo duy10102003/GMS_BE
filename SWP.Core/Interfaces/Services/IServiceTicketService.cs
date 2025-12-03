@@ -41,7 +41,7 @@ namespace SWP.Core.Interfaces.Services
         Task<int> UpdateAsync(int id, ServiceTicketUpdateDto request);
 
         /// <summary>
-        /// Xóa Service Ticket
+        /// Xóa Service Ticket (chỉ khi chưa hoàn thành, tự động rollback part quantity)
         /// </summary>
         /// <param name="id">ID của Service Ticket</param>
         /// <returns>Số dòng bị ảnh hưởng</returns>
@@ -56,37 +56,44 @@ namespace SWP.Core.Interfaces.Services
         Task<int> AssignToTechnicalAsync(int id, ServiceTicketAssignDto request);
 
         /// <summary>
-        /// Thêm part vào Service Ticket (Staff có thể thêm)
+        /// Chuyển status sang PendingTechnicalConfirmation (0)
         /// </summary>
         /// <param name="id">ID của Service Ticket</param>
-        /// <param name="request">Thông tin part</param>
-        /// <returns>ID của Service Ticket Detail vừa tạo</returns>
-        Task<int> AddPartAsync(int id, ServiceTicketAddPartDto request);
+        /// <param name="request">Thông tin thay đổi</param>
+        /// <returns>Số dòng bị ảnh hưởng</returns>
+        Task<int> ChangeToPendingTechnicalConfirmationAsync(int id, ServiceTicketChangeStatusDto request);
 
         /// <summary>
-        /// Thêm garage service vào Service Ticket (Staff có thể thêm)
+        /// Chuyển status sang AdjustedByTechnical (1)
         /// </summary>
         /// <param name="id">ID của Service Ticket</param>
-        /// <param name="request">Thông tin garage service</param>
-        /// <returns>ID của Service Ticket Detail vừa tạo</returns>
-        Task<int> AddGarageServiceAsync(int id, ServiceTicketAddGarageServiceDto request);
+        /// <param name="request">Thông tin thay đổi</param>
+        /// <returns>Số dòng bị ảnh hưởng</returns>
+        Task<int> ChangeToAdjustedByTechnicalAsync(int id, ServiceTicketChangeStatusDto request);
 
         /// <summary>
-        /// Xóa part/garage service khỏi Service Ticket
+        /// Chuyển status sang InProgress (2)
         /// </summary>
-        /// <param name="serviceTicketId">ID của Service Ticket</param>
-        /// <param name="serviceTicketDetailId">ID của Service Ticket Detail</param>
+        /// <param name="id">ID của Service Ticket</param>
+        /// <param name="request">Thông tin thay đổi</param>
         /// <returns>Số dòng bị ảnh hưởng</returns>
-        Task<int> RemoveDetailAsync(int serviceTicketId, int serviceTicketDetailId);
+        Task<int> ChangeToInProgressAsync(int id, ServiceTicketChangeStatusDto request);
 
         /// <summary>
-        /// Duyệt parts và services do Mechanic đề xuất
+        /// Chuyển status sang Completed (3)
         /// </summary>
-        /// <param name="technicalTaskId">ID của TechnicalTask</param>
-        /// <param name="request">Danh sách parts và services được duyệt</param>
-        /// <param name="staffId">ID của staff duyệt</param>
+        /// <param name="id">ID của Service Ticket</param>
+        /// <param name="request">Thông tin thay đổi</param>
         /// <returns>Số dòng bị ảnh hưởng</returns>
-        Task<int> ApproveMechanicProposalAsync(int technicalTaskId, ServiceTicketUpdatePartsServicesDto request, int staffId);
+        Task<int> ChangeToCompletedAsync(int id, ServiceTicketChangeStatusDto request);
+
+        /// <summary>
+        /// Chuyển status sang Cancelled (4) - Tự động rollback part quantity
+        /// </summary>
+        /// <param name="id">ID của Service Ticket</param>
+        /// <param name="request">Thông tin thay đổi</param>
+        /// <returns>Số dòng bị ảnh hưởng</returns>
+        Task<int> ChangeToCancelledAsync(int id, ServiceTicketChangeStatusDto request);
 
         #endregion
 

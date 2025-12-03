@@ -14,9 +14,9 @@ namespace SWP.Core.Services
     public class PartService : IPartService
     {
         private readonly IPartRepo _partRepo;
-        private readonly IBaseRepo<PartCategory> _partCategoryRepo;
+        private readonly IPartCategoryRepo _partCategoryRepo;
 
-        public PartService(IPartRepo partRepo, IBaseRepo<PartCategory> partCategoryRepo)
+        public PartService(IPartRepo partRepo, IPartCategoryRepo partCategoryRepo)
         {
             _partRepo = partRepo;
             _partCategoryRepo = partCategoryRepo;
@@ -143,6 +143,14 @@ namespace SWP.Core.Services
             return _partRepo.GetAllForSelectAsync();
         }
 
+        /// <summary>
+        /// Tìm kiếm Part cho select (với search keyword)
+        /// </summary>
+        public Task<List<PartSelectDto>> SearchForSelectAsync(string? searchKeyword, int limit = 50)
+        {
+            return _partRepo.SearchForSelectAsync(searchKeyword, limit);
+        }
+
         #region Helpers
 
         /// <summary>
@@ -244,8 +252,9 @@ namespace SWP.Core.Services
         /// </summary>
         private async Task EnsurePartCategoryExists(int partCategoryId)
         {
-            var partCategory = await _partCategoryRepo.GetById(partCategoryId);
-            if (partCategory == null)
+            // Dùng ExistsAsync để kiểm tra tồn tại (đơn giản và hiệu quả hơn)
+            var exists = await _partCategoryRepo.ExistsAsync(partCategoryId);
+            if (!exists)
             {
                 throw new ValidateException("Không tìm thấy danh mục phụ tùng.");
             }

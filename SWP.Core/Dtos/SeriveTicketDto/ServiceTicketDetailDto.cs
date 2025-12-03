@@ -53,30 +53,29 @@ namespace SWP.Core.Dtos.SeriveTicketDto
         public int PartId { get; set; }
         public string PartName { get; set; } = string.Empty;
         public string PartCode { get; set; } = string.Empty;
-        public decimal? InventoryPrice { get; set; }
-        public int PartStock { get; set; }
+        public decimal? PartPrice { get; set; }
+        public int PartQuantity { get; set; }
         public string PartUnit { get; set; } = string.Empty;
-        public SupplierInfoDto? Supplier { get; set; }
+        public PartCategoryInfoDto? PartCategory { get; set; }
     }
 
     /// <summary>
-    /// DTO cho thông tin supplier
+    /// DTO cho thông tin part category
     /// </summary>
-    public class SupplierInfoDto
+    public class PartCategoryInfoDto
     {
-        public int SupplierId { get; set; }
-        public string SupplierName { get; set; } = string.Empty;
-        public string SupplierCode { get; set; } = string.Empty;
+        public int PartCategoryId { get; set; }
+        public string? PartCategoryName { get; set; }
+        public string? PartCategoryCode { get; set; }
     }
 
     /// <summary>
-    /// DTO cho garage service trong service ticket
+    /// DTO cho garage service trong service ticket (không có quantity)
     /// </summary>
     public class ServiceTicketDetailServiceDto
     {
         public int ServiceTicketDetailId { get; set; }
         public GarageServiceInfoDto GarageService { get; set; } = new GarageServiceInfoDto();
-        public int Quantity { get; set; }
     }
 
     /// <summary>

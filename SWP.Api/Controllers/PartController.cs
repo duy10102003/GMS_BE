@@ -53,6 +53,19 @@ namespace SWP.Api.Controllers
         }
 
         /// <summary>
+        /// Kiểm tra mã Part đã tồn tại hay chưa
+        /// </summary>
+        /// <param name="partCode">Mã Part cần kiểm tra</param>
+        /// <param name="excludeId">ID của Part hiện tại (null khi tạo mới, có giá trị khi update để loại trừ chính record đang sửa)</param>
+        /// <returns>True nếu đã tồn tại, False nếu chưa</returns>
+        [HttpGet("check-code")]
+        public async Task<IActionResult> CheckCodeExists([FromQuery] string partCode, [FromQuery] int? excludeId = null)
+        {
+            var result = await _partService.CheckCodeExistsAsync(partCode, excludeId);
+            return Ok(ApiResponse<object>.SuccessResponse(new { exists = result }, "Kiểm tra mã part thành công"));
+        }
+
+        /// <summary>
         /// Lấy Part theo ID
         /// </summary>
         /// <param name="id">ID của Part</param>
@@ -102,18 +115,18 @@ namespace SWP.Api.Controllers
             return Ok(ApiResponse<object>.SuccessResponse(new { affectedRows = result }, "Xóa part thành công"));
         }
 
-        /// <summary>
-        /// Kiểm tra mã Part đã tồn tại hay chưa
-        /// </summary>
-        /// <param name="partCode">Mã Part cần kiểm tra</param>
-        /// <param name="excludeId">ID của Part hiện tại (null khi tạo mới, có giá trị khi update để loại trừ chính record đang sửa)</param>
-        /// <returns>True nếu đã tồn tại, False nếu chưa</returns>
-        [HttpGet("check-code")]
-        public async Task<IActionResult> CheckCodeExists([FromQuery] string partCode, [FromQuery] int? excludeId = null)
-        {
-            var result = await _partService.CheckCodeExistsAsync(partCode, excludeId);
-            return Ok(ApiResponse<object>.SuccessResponse(new { exists = result }, "Kiểm tra mã part thành công"));
-        }
+        ///// <summary>
+        ///// Kiểm tra mã Part đã tồn tại hay chưa
+        ///// </summary>
+        ///// <param name="partCode">Mã Part cần kiểm tra</param>
+        ///// <param name="excludeId">ID của Part hiện tại (null khi tạo mới, có giá trị khi update để loại trừ chính record đang sửa)</param>
+        ///// <returns>True nếu đã tồn tại, False nếu chưa</returns>
+        //[HttpGet("check-code")]
+        //public async Task<IActionResult> CheckCodeExists([FromQuery] string partCode, [FromQuery] int? excludeId = null)
+        //{
+        //    var result = await _partService.CheckCodeExistsAsync(partCode, excludeId);
+        //    return Ok(ApiResponse<object>.SuccessResponse(new { exists = result }, "Kiểm tra mã part thành công"));
+        //}
     }
 }
 

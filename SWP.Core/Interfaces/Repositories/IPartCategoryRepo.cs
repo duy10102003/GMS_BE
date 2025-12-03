@@ -37,6 +37,21 @@ namespace SWP.Core.Interfaces.Repositories
         /// </summary>
         /// <returns>Danh sách Part Category</returns>
         Task<List<PartCategorySelectDto>> GetAllForSelectAsync();
+
+        /// <summary>
+        /// Xóa cứng Part Category (Hard Delete vì không có is_deleted)
+        /// </summary>
+        /// <param name="id">ID của Part Category cần xóa</param>
+        /// <returns>Số dòng bị ảnh hưởng</returns>
+        Task<int> DeleteHardAsync(int id);
+
+        /// <summary>
+        /// Kiểm tra Part Category có tồn tại hay không
+        /// </summary>
+        /// <param name="id">ID của Part Category</param>
+        /// <returns>True nếu tồn tại, False nếu không</returns>
+        Task<bool> ExistsAsync(int id);
     }
 }
+
 

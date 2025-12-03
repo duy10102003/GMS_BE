@@ -58,6 +58,14 @@ namespace SWP.Core.Interfaces.Services
         /// </summary>
         /// <returns>Danh sách Part</returns>
         Task<List<PartSelectDto>> GetAllForSelectAsync();
+
+        /// <summary>
+        /// Tìm kiếm Part cho select (với search keyword)
+        /// </summary>
+        /// <param name="searchKeyword">Từ khóa tìm kiếm (tên, mã)</param>
+        /// <param name="limit">Số lượng kết quả tối đa</param>
+        /// <returns>Danh sách Part</returns>
+        Task<List<PartSelectDto>> SearchForSelectAsync(string? searchKeyword, int limit = 50);
     }
 }
 

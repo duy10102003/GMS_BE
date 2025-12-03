@@ -38,7 +38,7 @@ namespace SWP.Infrastructure.Repositories
                     pc.part_category_discription AS PartCategoryDiscription,
                     pc.part_category_phone AS PartCategoryPhone,
                     pc.status AS Status
-                FROM part_category pc";
+                FROM `part_category` pc";
 
             // Xử lý ColumnFilters
             if (filter.ColumnFilters != null && filter.ColumnFilters.Any())
@@ -116,7 +116,7 @@ namespace SWP.Infrastructure.Repositories
             // Count query
             var countSql = $@"
                 SELECT COUNT(1)
-                FROM part_category pc{whereClause}";
+                FROM `part_category` pc{whereClause}";
 
             // Sort
             var orderBy = "ORDER BY pc.part_category_id DESC";
@@ -174,7 +174,7 @@ namespace SWP.Infrastructure.Repositories
                     pc.part_category_discription AS PartCategoryDiscription,
                     pc.part_category_phone AS PartCategoryPhone,
                     pc.status AS Status
-                FROM part_category pc
+                FROM `part_category` pc
                 WHERE pc.part_category_id = @Id";
 
             using var connection = new MySqlConnection(_connection);
@@ -186,13 +186,13 @@ namespace SWP.Infrastructure.Repositories
         /// </summary>
         public async Task<bool> CheckCodeExistsAsync(string partCategoryCode, int? excludeId = null)
         {
-            var sql = "SELECT COUNT(1) FROM part_category WHERE part_category_code = @PartCategoryCode";
+            var sql = "SELECT COUNT(1) FROM `part_category` WHERE `part_category_code` = @PartCategoryCode";
             var parameters = new DynamicParameters();
             parameters.Add("@PartCategoryCode", partCategoryCode);
 
             if (excludeId.HasValue)
             {
-                sql += " AND part_category_id != @ExcludeId";
+                sql += " AND `part_category_id` != @ExcludeId";
                 parameters.Add("@ExcludeId", excludeId.Value);
             }
 
@@ -211,12 +211,33 @@ namespace SWP.Infrastructure.Repositories
                     pc.part_category_id AS PartCategoryId,
                     pc.part_category_name AS PartCategoryName,
                     pc.part_category_code AS PartCategoryCode
-                FROM part_category pc
+                FROM `part_category` pc
                 ORDER BY pc.part_category_name ASC";
 
             using var connection = new MySqlConnection(_connection);
             var result = await connection.QueryAsync<PartCategorySelectDto>(sql);
             return result.ToList();
+        }
+
+        /// <summary>
+        /// Xóa cứng Part Category (Hard Delete vì không có is_deleted)
+        /// </summary>
+        public async Task<int> DeleteHardAsync(int id)
+        {
+            var sql = "DELETE FROM `part_category` WHERE `part_category_id` = @Id";
+            using var connection = new MySqlConnection(_connection);
+            return await connection.ExecuteAsync(sql, new { Id = id });
+        }
+
+        /// <summary>
+        /// Kiểm tra Part Category có tồn tại hay không
+        /// </summary>
+        public async Task<bool> ExistsAsync(int id)
+        {
+            var sql = "SELECT COUNT(1) FROM `part_category` WHERE `part_category_id` = @Id";
+            using var connection = new MySqlConnection(_connection);
+            var count = await connection.QuerySingleAsync<int>(sql, new { Id = id });
+            return count > 0;
         }
 
         /// <summary>
@@ -253,4 +274,5 @@ namespace SWP.Infrastructure.Repositories
         }
     }
 }
+
 

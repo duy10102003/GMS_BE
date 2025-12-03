@@ -42,8 +42,8 @@ namespace SWP.Infrastructure.Repositories
                     pc.part_category_code AS PartCategoryCode,
                     p.part_price AS PartPrice,
                     p.warranty_month AS WarrantyMonth
-                FROM part p
-                LEFT JOIN part_category pc ON p.part_category_id = pc.part_category_id
+                FROM `part` p
+                LEFT JOIN `part_category` pc ON p.part_category_id = pc.part_category_id
                 WHERE p.is_deleted = 0";
 
             // Xử lý ColumnFilters
@@ -122,7 +122,7 @@ namespace SWP.Infrastructure.Repositories
             // Count query
             var countSql = $@"
                 SELECT COUNT(1)
-                FROM part p
+                FROM `part` p
                 WHERE p.is_deleted = 0{whereClause}";
 
             // Sort
@@ -186,8 +186,8 @@ namespace SWP.Infrastructure.Repositories
                     pc.status AS Status,
                     p.part_price AS PartPrice,
                     p.warranty_month AS WarrantyMonth
-                FROM part p
-                LEFT JOIN part_category pc ON p.part_category_id = pc.part_category_id
+                FROM `part` p
+                LEFT JOIN `part_category` pc ON p.part_category_id = pc.part_category_id
                 WHERE p.part_id = @Id AND p.is_deleted = 0";
 
             using var connection = new MySqlConnection(_connection);
@@ -199,13 +199,13 @@ namespace SWP.Infrastructure.Repositories
         /// </summary>
         public async Task<bool> CheckCodeExistsAsync(string partCode, int? excludeId = null)
         {
-            var sql = "SELECT COUNT(1) FROM part WHERE part_code = @PartCode AND is_deleted = 0";
+            var sql = "SELECT COUNT(1) FROM `part` WHERE `part_code` = @PartCode AND `is_deleted` = 0";
             var parameters = new DynamicParameters();
             parameters.Add("@PartCode", partCode);
 
             if (excludeId.HasValue)
             {
-                sql += " AND part_id != @ExcludeId";
+                sql += " AND `part_id` != @ExcludeId";
                 parameters.Add("@ExcludeId", excludeId.Value);
             }
 
@@ -226,12 +226,43 @@ namespace SWP.Infrastructure.Repositories
                     p.part_code AS PartCode,
                     p.part_quantity AS PartQuantity,
                     p.part_unit AS PartUnit
-                FROM part p
+                FROM `part` p
                 WHERE p.is_deleted = 0
                 ORDER BY p.part_name ASC";
 
             using var connection = new MySqlConnection(_connection);
             var result = await connection.QueryAsync<PartSelectDto>(sql);
+            return result.ToList();
+        }
+
+        /// <summary>
+        /// Tìm kiếm Part cho select (với search keyword)
+        /// </summary>
+        public async Task<List<PartSelectDto>> SearchForSelectAsync(string? searchKeyword, int limit = 50)
+        {
+            var sql = @"
+                SELECT 
+                    p.part_id AS PartId,
+                    p.part_name AS PartName,
+                    p.part_code AS PartCode,
+                    p.part_quantity AS PartQuantity,
+                    p.part_unit AS PartUnit
+                FROM `part` p
+                WHERE p.is_deleted = 0";
+
+            var parameters = new DynamicParameters();
+
+            if (!string.IsNullOrWhiteSpace(searchKeyword))
+            {
+                sql += " AND (p.part_name LIKE @SearchKeyword OR p.part_code LIKE @SearchKeyword)";
+                parameters.Add("@SearchKeyword", $"%{searchKeyword.Trim()}%");
+            }
+
+            sql += " ORDER BY p.part_name ASC LIMIT @Limit";
+            parameters.Add("@Limit", limit);
+
+            using var connection = new MySqlConnection(_connection);
+            var result = await connection.QueryAsync<PartSelectDto>(sql, parameters);
             return result.ToList();
         }
 
@@ -242,6 +273,7 @@ namespace SWP.Infrastructure.Repositories
         {
             return columnName.ToLower() switch
             {
+                "partid" or "part_id" => "p.part_id",
                 "partname" or "part_name" => "p.part_name",
                 "partcode" or "part_code" => "p.part_code",
                 "partquantity" or "part_quantity" => "p.part_quantity",
@@ -251,7 +283,7 @@ namespace SWP.Infrastructure.Repositories
                 "partcategorycode" or "part_category_code" => "pc.part_category_code",
                 "partprice" or "part_price" => "p.part_price",
                 "warrantymonth" or "warranty_month" => "p.warranty_month",
-                _ => $"p.{columnName}"
+                _ => $"p.{columnName.ToLower()}"
             };
         }
 
@@ -262,6 +294,7 @@ namespace SWP.Infrastructure.Repositories
         {
             return columnName.ToLower() switch
             {
+                "partid" or "part_id" => "p.part_id",
                 "partname" or "part_name" => "p.part_name",
                 "partcode" or "part_code" => "p.part_code",
                 "partquantity" or "part_quantity" => "p.part_quantity",
@@ -271,7 +304,7 @@ namespace SWP.Infrastructure.Repositories
                 "partcategorycode" or "part_category_code" => "pc.part_category_code",
                 "partprice" or "part_price" => "p.part_price",
                 "warrantymonth" or "warranty_month" => "p.warranty_month",
-                _ => $"p.{columnName}"
+                _ => $"p.{columnName.ToLower()}"
             };
         }
     }

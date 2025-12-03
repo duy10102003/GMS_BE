@@ -7,6 +7,7 @@ namespace SWP.Core.Interfaces.Repositories
     /// <summary>
     /// Interface cho Garage Service Repository
     /// Created by: DuyLC(02/12/2025)
+    /// Updated by: DuyLC(03/12/2025) - Thêm search method
     /// </summary>
     public interface IGarageServiceRepo : IBaseRepo<GarageService>
     {
@@ -23,6 +24,12 @@ namespace SWP.Core.Interfaces.Repositories
         /// <param name="id">ID của Garage Service</param>
         /// <returns>Chi tiết Garage Service</returns>
         Task<GarageServiceDetailDto?> GetDetailAsync(int id);
+
+        /// <summary>
+        /// Tìm kiếm Garage Service cho select (với search keyword)
+        /// </summary>
+        /// <param name="request">Request tìm kiếm</param>
+        /// <returns>Danh sách Garage Service</returns>
+        Task<List<GarageServiceSelectDto>> SearchForSelectAsync(GarageServiceSearchRequest request);
     }
 }
-

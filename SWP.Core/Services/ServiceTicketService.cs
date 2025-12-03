@@ -92,7 +92,7 @@ namespace SWP.Core.Services
                 await EnsureBookingExists(request.BookingId.Value);
             }
 
-            // Xử lý customer: Nếu có CustomerId thì dùng, nếu không thì tạo mới từ CustomerInfo
+            // Xử lý customer: Nếu không có CustomerId thì tạo mới từ CustomerInfo
             int customerId;
             if (request.CustomerId.HasValue)
             {
@@ -121,23 +121,46 @@ namespace SWP.Core.Services
                 };
 
                 var customerIdObj = await _customerRepo.InsertAsync(customer);
-                customerId = customerIdObj is int id ? id : (int)customerIdObj;
+                // InsertAsync trả về int hoặc long, convert về int
+                if (customerIdObj is int cid)
+                {
+                    customerId = cid;
+                }
+                else if (customerIdObj is long cidLong)
+                {
+                    customerId = (int)cidLong;
+                }
+                else
+                {
+                    throw new ValidateException("Không thể lấy ID của customer vừa tạo.");
+                }
             }
             else
             {
                 throw new ValidateException("Phải cung cấp CustomerId hoặc CustomerInfo.");
             }
 
-            // Xử lý vehicle: Nếu có VehicleId thì dùng, nếu không thì tạo mới từ VehicleInfo
+            // Xử lý vehicle: Nếu không có VehicleId thì tạo mới từ VehicleInfo và link với customer
             int vehicleId;
             if (request.VehicleId.HasValue)
             {
                 await EnsureVehicleExists(request.VehicleId.Value);
+                var vehicle = await _vehicleRepo.GetById(request.VehicleId.Value);
+                if (vehicle == null)
+                {
+                    throw new NotFoundException("Không tìm thấy vehicle.");
+                }
+
+                // Kiểm tra vehicle phải thuộc về customer được chọn
+                if (vehicle.CustomerId.HasValue && vehicle.CustomerId.Value != customerId)
+                {
+                    throw new ValidateException("Vehicle không thuộc về customer được chọn.");
+                }
+
                 vehicleId = request.VehicleId.Value;
 
                 // Cập nhật customer_id cho vehicle nếu chưa có
-                var vehicle = await _vehicleRepo.GetById(vehicleId);
-                if (vehicle != null && !vehicle.CustomerId.HasValue)
+                if (!vehicle.CustomerId.HasValue)
                 {
                     vehicle.CustomerId = customerId;
                     await _vehicleRepo.UpdateAsync(vehicleId, vehicle);
@@ -145,7 +168,7 @@ namespace SWP.Core.Services
             }
             else if (request.VehicleInfo != null)
             {
-                // Tạo vehicle mới và link với customer
+                // Tạo vehicle mới và link với customer vừa tạo
                 var vehicle = new Vehicle
                 {
                     VehicleName = request.VehicleInfo.VehicleName.Trim(),
@@ -153,11 +176,23 @@ namespace SWP.Core.Services
                     CurrentKm = request.VehicleInfo.CurrentKm,
                     Make = request.VehicleInfo.Make?.Trim(),
                     Model = request.VehicleInfo.Model?.Trim(),
-                    CustomerId = customerId
+                    CustomerId = customerId // Link với customer vừa tạo
                 };
 
                 var vehicleIdObj = await _vehicleRepo.InsertAsync(vehicle);
-                vehicleId = vehicleIdObj is int vid ? vid : (int)vehicleIdObj;
+                // InsertAsync trả về int hoặc long, convert về int
+                if (vehicleIdObj is int vid)
+                {
+                    vehicleId = vid;
+                }
+                else if (vehicleIdObj is long vidLong)
+                {
+                    vehicleId = (int)vidLong;
+                }
+                else
+                {
+                    throw new ValidateException("Không thể lấy ID của vehicle vừa tạo.");
+                }
             }
             else
             {
@@ -184,13 +219,50 @@ namespace SWP.Core.Services
                 VehicleId = vehicleId,
                 CreatedBy = request.CreatedBy,
                 CreatedDate = DateTime.UtcNow,
-                ServiceTicketStatus = ServiceTicketStatus.Pending,
+                ServiceTicketStatus = ServiceTicketStatus.PendingTechnicalConfirmation,
                 InitialIssue = request.InitialIssue,
                 ServiceTicketCode = serviceTicketCode
             };
 
             var serviceTicketIdObj = await _serviceTicketRepo.InsertAsync(serviceTicket);
             var serviceTicketId = serviceTicketIdObj is int stid ? stid : (int)serviceTicketIdObj;
+
+            // Thêm Parts vào Service Ticket Detail
+            if (request.Parts != null && request.Parts.Any())
+            {
+                foreach (var partDto in request.Parts)
+                {
+                    // Validate part quantity
+                    await ValidatePartQuantityAsync(partDto.PartId, partDto.Quantity);
+
+                    var detail = new ServiceTicketDetail
+                    {
+                        ServiceTicketId = serviceTicketId,
+                        PartId = partDto.PartId,
+                        Quantity = partDto.Quantity
+                    };
+
+                    await _serviceTicketDetailRepo.InsertAsync(detail);
+                }
+            }
+
+            // Thêm Garage Services vào Service Ticket Detail (không có quantity)
+            if (request.GarageServiceIds != null && request.GarageServiceIds.Any())
+            {
+                foreach (var garageServiceId in request.GarageServiceIds)
+                {
+                    await EnsureGarageServiceExists(garageServiceId);
+
+                    var detail = new ServiceTicketDetail
+                    {
+                        ServiceTicketId = serviceTicketId,
+                        GarageServiceId = garageServiceId,
+                        Quantity = 1 // Garage service không có quantity, mặc định 1
+                    };
+
+                    await _serviceTicketDetailRepo.InsertAsync(detail);
+                }
+            }
 
             // Nếu có assign technical staff, tạo technical task
             if (request.AssignedToTechnical.HasValue)
@@ -284,6 +356,70 @@ namespace SWP.Core.Services
                 await EnsureCodeUnique(request.ServiceTicketCode.Trim(), id);
             }
 
+            // Xử lý Parts: So sánh list cũ và mới để rollback số lượng phù hợp
+            if (request.Parts != null)
+            {
+                // Lấy danh sách parts cũ
+                var oldDetails = await _serviceTicketRepo.GetServiceTicketDetailsAsync(id);
+                var oldParts = oldDetails.Where(d => d.PartId.HasValue && d.Quantity.HasValue).ToList();
+
+                // Rollback số lượng từ parts cũ
+                foreach (var oldPart in oldParts)
+                {
+                    await RollbackPartQuantityAsync(oldPart.PartId!.Value, oldPart.Quantity!.Value);
+                }
+
+                // Xóa các detail cũ (soft delete)
+                foreach (var oldDetail in oldDetails)
+                {
+                    await _serviceTicketDetailRepo.DeleteAsync(oldDetail.ServiceTicketDetailId);
+                }
+
+                // Thêm parts mới
+                foreach (var partDto in request.Parts)
+                {
+                    await ValidatePartQuantityAsync(partDto.PartId, partDto.Quantity);
+
+                    var detail = new ServiceTicketDetail
+                    {
+                        ServiceTicketId = id,
+                        PartId = partDto.PartId,
+                        Quantity = partDto.Quantity
+                    };
+
+                    await _serviceTicketDetailRepo.InsertAsync(detail);
+                }
+            }
+
+            // Xử lý Garage Services: So sánh list cũ và mới
+            if (request.GarageServiceIds != null)
+            {
+                // Lấy danh sách garage services cũ
+                var oldDetails = await _serviceTicketRepo.GetServiceTicketDetailsAsync(id);
+                var oldServices = oldDetails.Where(d => d.GarageServiceId.HasValue).ToList();
+
+                // Xóa các detail cũ (soft delete)
+                foreach (var oldDetail in oldServices)
+                {
+                    await _serviceTicketDetailRepo.DeleteAsync(oldDetail.ServiceTicketDetailId);
+                }
+
+                // Thêm garage services mới (không có quantity)
+                foreach (var garageServiceId in request.GarageServiceIds)
+                {
+                    await EnsureGarageServiceExists(garageServiceId);
+
+                    var detail = new ServiceTicketDetail
+                    {
+                        ServiceTicketId = id,
+                        GarageServiceId = garageServiceId,
+                        Quantity = 1 // Garage service không có quantity, mặc định 1
+                    };
+
+                    await _serviceTicketDetailRepo.InsertAsync(detail);
+                }
+            }
+
             // Cập nhật entity
             existing.BookingId = request.BookingId;
             existing.ModifiedBy = request.ModifiedBy;
@@ -291,16 +427,11 @@ namespace SWP.Core.Services
             existing.InitialIssue = request.InitialIssue;
             existing.ServiceTicketCode = request.ServiceTicketCode?.Trim();
 
-            if (request.ServiceTicketStatus.HasValue)
-            {
-                existing.ServiceTicketStatus = request.ServiceTicketStatus.Value;
-            }
-
             return await _serviceTicketRepo.UpdateAsync(id, existing);
         }
 
         /// <summary>
-        /// Xóa Service Ticket
+        /// Xóa Service Ticket (chỉ khi chưa hoàn thành, tự động rollback part quantity)
         /// </summary>
         public async Task<int> DeleteAsync(int id)
         {
@@ -309,6 +440,20 @@ namespace SWP.Core.Services
             {
                 throw new NotFoundException("Không tìm thấy service ticket.");
             }
+
+            // Chỉ cho phép xóa khi chưa hoàn thành
+            if (existing.ServiceTicketStatus == ServiceTicketStatus.Completed)
+            {
+                throw new ValidateException("Không thể xóa service ticket đã hoàn thành.");
+            }
+
+            // Rollback part quantity
+            var details = await _serviceTicketRepo.GetServiceTicketDetailsAsync(id);
+            foreach (var detail in details.Where(d => d.PartId.HasValue && d.Quantity.HasValue))
+            {
+                await RollbackPartQuantityAsync(detail.PartId!.Value, detail.Quantity!.Value);
+            }
+
             return await _serviceTicketRepo.DeleteAsync(id);
         }
 
@@ -330,7 +475,7 @@ namespace SWP.Core.Services
             var technicalTaskId = await AssignToTechnicalInternalAsync(id, request.AssignedToTechnical, request.Description);
 
             // Cập nhật trạng thái
-            serviceTicket.ServiceTicketStatus = ServiceTicketStatus.Assigned;
+            serviceTicket.ServiceTicketStatus = ServiceTicketStatus.PendingTechnicalConfirmation;
             serviceTicket.ModifiedDate = DateTime.UtcNow;
             await _serviceTicketRepo.UpdateAsync(id, serviceTicket);
 
@@ -819,6 +964,144 @@ namespace SWP.Core.Services
             return 1;
         }
 
+        /// <summary>
+        /// Chuyển status sang PendingTechnicalConfirmation (0)
+        /// </summary>
+        public async Task<int> ChangeToPendingTechnicalConfirmationAsync(int id, ServiceTicketChangeStatusDto request)
+        {
+            var serviceTicket = await _serviceTicketRepo.GetById(id);
+            if (serviceTicket == null)
+            {
+                throw new NotFoundException("Không tìm thấy service ticket.");
+            }
+
+            await EnsureUserExists(request.ModifiedBy);
+
+            serviceTicket.ServiceTicketStatus = ServiceTicketStatus.PendingTechnicalConfirmation;
+            serviceTicket.ModifiedBy = request.ModifiedBy;
+            serviceTicket.ModifiedDate = DateTime.UtcNow;
+
+            return await _serviceTicketRepo.UpdateAsync(id, serviceTicket);
+        }
+
+        /// <summary>
+        /// Chuyển status sang AdjustedByTechnical (1)
+        /// </summary>
+        public async Task<int> ChangeToAdjustedByTechnicalAsync(int id, ServiceTicketChangeStatusDto request)
+        {
+            var serviceTicket = await _serviceTicketRepo.GetById(id);
+            if (serviceTicket == null)
+            {
+                throw new NotFoundException("Không tìm thấy service ticket.");
+            }
+
+            // Chỉ cho phép chuyển từ PendingTechnicalConfirmation
+            if (serviceTicket.ServiceTicketStatus != ServiceTicketStatus.PendingTechnicalConfirmation)
+            {
+                throw new ValidateException("Chỉ có thể chuyển sang trạng thái này từ PendingTechnicalConfirmation.");
+            }
+
+            await EnsureUserExists(request.ModifiedBy);
+
+            serviceTicket.ServiceTicketStatus = ServiceTicketStatus.AdjustedByTechnical;
+            serviceTicket.ModifiedBy = request.ModifiedBy;
+            serviceTicket.ModifiedDate = DateTime.UtcNow;
+
+            return await _serviceTicketRepo.UpdateAsync(id, serviceTicket);
+        }
+
+        /// <summary>
+        /// Chuyển status sang InProgress (2)
+        /// </summary>
+        public async Task<int> ChangeToInProgressAsync(int id, ServiceTicketChangeStatusDto request)
+        {
+            var serviceTicket = await _serviceTicketRepo.GetById(id);
+            if (serviceTicket == null)
+            {
+                throw new NotFoundException("Không tìm thấy service ticket.");
+            }
+
+            // Chỉ cho phép chuyển từ AdjustedByTechnical
+            if (serviceTicket.ServiceTicketStatus != ServiceTicketStatus.AdjustedByTechnical)
+            {
+                throw new ValidateException("Chỉ có thể chuyển sang trạng thái này từ AdjustedByTechnical.");
+            }
+
+            await EnsureUserExists(request.ModifiedBy);
+
+            serviceTicket.ServiceTicketStatus = ServiceTicketStatus.InProgress;
+            serviceTicket.ModifiedBy = request.ModifiedBy;
+            serviceTicket.ModifiedDate = DateTime.UtcNow;
+
+            return await _serviceTicketRepo.UpdateAsync(id, serviceTicket);
+        }
+
+        /// <summary>
+        /// Chuyển status sang Completed (3) - Tự động deduct part quantity
+        /// </summary>
+        public async Task<int> ChangeToCompletedAsync(int id, ServiceTicketChangeStatusDto request)
+        {
+            var serviceTicket = await _serviceTicketRepo.GetById(id);
+            if (serviceTicket == null)
+            {
+                throw new NotFoundException("Không tìm thấy service ticket.");
+            }
+
+            // Chỉ cho phép chuyển từ InProgress
+            if (serviceTicket.ServiceTicketStatus != ServiceTicketStatus.InProgress)
+            {
+                throw new ValidateException("Chỉ có thể chuyển sang trạng thái này từ InProgress.");
+            }
+
+            await EnsureUserExists(request.ModifiedBy);
+
+            // Deduct part quantity
+            var details = await _serviceTicketRepo.GetServiceTicketDetailsAsync(id);
+            foreach (var detail in details.Where(d => d.PartId.HasValue && d.Quantity.HasValue))
+            {
+                await DeductPartQuantityAsync(detail.PartId!.Value, detail.Quantity!.Value);
+            }
+
+            serviceTicket.ServiceTicketStatus = ServiceTicketStatus.Completed;
+            serviceTicket.ModifiedBy = request.ModifiedBy;
+            serviceTicket.ModifiedDate = DateTime.UtcNow;
+
+            return await _serviceTicketRepo.UpdateAsync(id, serviceTicket);
+        }
+
+        /// <summary>
+        /// Chuyển status sang Cancelled (4) - Tự động rollback part quantity
+        /// </summary>
+        public async Task<int> ChangeToCancelledAsync(int id, ServiceTicketChangeStatusDto request)
+        {
+            var serviceTicket = await _serviceTicketRepo.GetById(id);
+            if (serviceTicket == null)
+            {
+                throw new NotFoundException("Không tìm thấy service ticket.");
+            }
+
+            // Chỉ cho phép hủy khi chưa hoàn thành
+            if (serviceTicket.ServiceTicketStatus == ServiceTicketStatus.Completed)
+            {
+                throw new ValidateException("Không thể hủy service ticket đã hoàn thành.");
+            }
+
+            await EnsureUserExists(request.ModifiedBy);
+
+            // Rollback part quantity
+            var details = await _serviceTicketRepo.GetServiceTicketDetailsAsync(id);
+            foreach (var detail in details.Where(d => d.PartId.HasValue && d.Quantity.HasValue))
+            {
+                await RollbackPartQuantityAsync(detail.PartId!.Value, detail.Quantity!.Value);
+            }
+
+            serviceTicket.ServiceTicketStatus = ServiceTicketStatus.Cancelled;
+            serviceTicket.ModifiedBy = request.ModifiedBy;
+            serviceTicket.ModifiedDate = DateTime.UtcNow;
+
+            return await _serviceTicketRepo.UpdateAsync(id, serviceTicket);
+        }
+
         #endregion
 
         #region Part Quantity Helpers
@@ -873,6 +1156,18 @@ namespace SWP.Core.Services
 
             part.PartQuantity += quantity;
             await _partRepo.UpdateAsync(partId, part);
+        }
+
+        /// <summary>
+        /// Kiểm tra garage service tồn tại
+        /// </summary>
+        private async Task EnsureGarageServiceExists(int garageServiceId)
+        {
+            var garageService = await _garageServiceRepo.GetById(garageServiceId);
+            if (garageService == null)
+            {
+                throw new NotFoundException($"Không tìm thấy garage service với ID: {garageServiceId}");
+            }
         }
 
         #endregion
