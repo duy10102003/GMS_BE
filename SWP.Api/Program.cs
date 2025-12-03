@@ -1,4 +1,4 @@
-﻿using SWP.Core.Exceptions;
+using SWP.Core.Exceptions;
 using SWP.Core.Interfaces.Repositories;
 using SWP.Core.Interfaces.Services;
 using SWP.Core.Services;
@@ -16,11 +16,13 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-//Đăng ký Service
+//Dang ky Service
 builder.Services.AddScoped<IServiceTicketService, ServiceTicketService>();
+builder.Services.AddScoped<IBookingService, BookingService>();
 
-//Đăng ký Repo
+//Dang ky Repo
 builder.Services.AddScoped<IServiceTicketRepo, ServiceTicketRepo>();
+builder.Services.AddScoped<IBookingRepo, BookingRepo>();
 builder.Services.AddScoped<IBaseRepo<User>, BaseRepo<User>>();
 builder.Services.AddScoped<IBaseRepo<Vehicle>, BaseRepo<Vehicle>>();
 builder.Services.AddScoped<IBaseRepo<Part>, BaseRepo<Part>>();
