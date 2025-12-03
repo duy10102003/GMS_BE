@@ -22,7 +22,7 @@ namespace SWP.Core.Interfaces.Repositories
         /// </summary>
         /// <param name="id">ID của Service Ticket</param>
         /// <returns>Chi tiết Service Ticket</returns>
-        Task<ServiceTicketDetailDto?> GetDetailAsync(Guid id);
+        Task<ServiceTicketDetailDto?> GetDetailAsync(int id);
 
         /// <summary>
         /// Kiểm tra mã Service Ticket đã tồn tại chưa
@@ -30,8 +30,26 @@ namespace SWP.Core.Interfaces.Repositories
         /// <param name="code">Mã Service Ticket</param>
         /// <param name="excludeId">ID cần loại trừ (khi update)</param>
         /// <returns>True nếu đã tồn tại</returns>
-        Task<bool> CheckCodeExistsAsync(string code, Guid? excludeId = null);
+        Task<bool> CheckCodeExistsAsync(string code, int? excludeId = null);
+
+        /// <summary>
+        /// Lấy danh sách tasks của Mechanic có phân trang
+        /// </summary>
+        /// <param name="mechanicId">ID của Mechanic</param>
+        /// <param name="filter">Filter và phân trang</param>
+        /// <returns>Danh sách tasks</returns>
+        Task<PagedResult<MechanicTaskDto>> GetMechanicTasksAsync(int mechanicId, ServiceTicketFilterDtoRequest filter);
+
+        /// <summary>
+        /// Lấy chi tiết task của Mechanic
+        /// </summary>
+        /// <param name="technicalTaskId">ID của TechnicalTask</param>
+        /// <param name="mechanicId">ID của Mechanic</param>
+        /// <returns>Chi tiết task</returns>
+        Task<MechanicTaskDto?> GetMechanicTaskDetailAsync(int technicalTaskId, int mechanicId);
     }
 }
+
+
 
 

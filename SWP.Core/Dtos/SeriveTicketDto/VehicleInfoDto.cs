@@ -9,6 +9,11 @@ namespace SWP.Core.Dtos.SeriveTicketDto
     public class VehicleInfoDto
     {
         /// <summary>
+        /// ID của vehicle (dùng cho response, nullable cho request)
+        /// </summary>
+        public int? VehicleId { get; set; }
+
+        /// <summary>
         /// Tên xe
         /// </summary>
         [Required(ErrorMessage = "Tên xe không được để trống.")]
@@ -40,10 +45,12 @@ namespace SWP.Core.Dtos.SeriveTicketDto
         public string? Model { get; set; }
 
         /// <summary>
-        /// ID của customer (nullable)
+        /// ID của customer (nullable, dùng cho request)
         /// </summary>
-        public Guid? CustomerId { get; set; }
+        public int? CustomerId { get; set; }
     }
 }
+
+
 
 

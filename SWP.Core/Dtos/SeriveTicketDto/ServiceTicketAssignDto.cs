@@ -12,7 +12,7 @@ namespace SWP.Core.Dtos.SeriveTicketDto
         /// ID của technical staff được assign
         /// </summary>
         [Required(ErrorMessage = "Technical staff ID không được để trống.")]
-        public Guid AssignedToTechnical { get; set; }
+        public int AssignedToTechnical { get; set; }
 
         /// <summary>
         /// Mô tả công việc
@@ -22,5 +22,7 @@ namespace SWP.Core.Dtos.SeriveTicketDto
         public string Description { get; set; } = string.Empty;
     }
 }
+
+
 
 

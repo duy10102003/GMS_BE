@@ -11,6 +11,7 @@ namespace SWP.Core.Services
     /// <summary>
     /// Service cho Service Ticket
     /// Created by: DuyLC(01/12/2025)
+    /// Updated by: DuyLC(02/12/2025) - Cập nhật logic theo yêu cầu mới
     /// </summary>
     public class ServiceTicketService : IServiceTicketService
     {
@@ -22,6 +23,8 @@ namespace SWP.Core.Services
         private readonly IBaseRepo<Customer> _customerRepo;
         private readonly IBaseRepo<ServiceTicketDetail> _serviceTicketDetailRepo;
         private readonly IBaseRepo<TechnicalTask> _technicalTaskRepo;
+        private readonly IBaseRepo<GarageService> _garageServiceRepo;
+        private readonly IBaseRepo<Inventory> _inventoryRepo;
 
         public ServiceTicketService(
             IServiceTicketRepo serviceTicketRepo,
@@ -31,7 +34,9 @@ namespace SWP.Core.Services
             IBaseRepo<Booking> bookingRepo,
             IBaseRepo<Customer> customerRepo,
             IBaseRepo<ServiceTicketDetail> serviceTicketDetailRepo,
-            IBaseRepo<TechnicalTask> technicalTaskRepo)
+            IBaseRepo<TechnicalTask> technicalTaskRepo,
+            IBaseRepo<GarageService> garageServiceRepo,
+            IBaseRepo<Inventory> inventoryRepo)
         {
             _serviceTicketRepo = serviceTicketRepo;
             _userRepo = userRepo;
@@ -41,7 +46,11 @@ namespace SWP.Core.Services
             _customerRepo = customerRepo;
             _serviceTicketDetailRepo = serviceTicketDetailRepo;
             _technicalTaskRepo = technicalTaskRepo;
+            _garageServiceRepo = garageServiceRepo;
+            _inventoryRepo = inventoryRepo;
         }
+
+        #region Staff Operations
 
         /// <summary>
         /// Lấy danh sách Service Ticket có phân trang
@@ -59,7 +68,7 @@ namespace SWP.Core.Services
         /// <summary>
         /// Lấy Service Ticket theo ID
         /// </summary>
-        public async Task<ServiceTicketDetailDto> GetByIdAsync(Guid id)
+        public async Task<ServiceTicketDetailDto> GetByIdAsync(int id)
         {
             var result = await _serviceTicketRepo.GetDetailAsync(id);
             if (result == null)
@@ -70,9 +79,9 @@ namespace SWP.Core.Services
         }
 
         /// <summary>
-        /// Tạo mới Service Ticket
+        /// Tạo mới Service Ticket (Staff)
         /// </summary>
-        public async Task<Guid> CreateAsync(ServiceTicketCreateDto request)
+        public async Task<int> CreateAsync(ServiceTicketCreateDto request)
         {
             // Validate
             ValidateCreatePayload(request);
@@ -87,10 +96,9 @@ namespace SWP.Core.Services
             }
 
             // Xử lý customer: Nếu có CustomerId thì dùng, nếu không thì tạo mới từ CustomerInfo
-            Guid customerId;
+            int customerId;
             if (request.CustomerId.HasValue)
             {
-                // Kiểm tra customer tồn tại
                 var existingCustomer = await _customerRepo.GetById(request.CustomerId.Value);
                 if (existingCustomer == null)
                 {
@@ -109,14 +117,14 @@ namespace SWP.Core.Services
                 // Tạo customer mới
                 var customer = new Customer
                 {
-                    CustomerId = Guid.NewGuid(),
                     CustomerName = request.CustomerInfo.CustomerName?.Trim(),
                     CustomerPhone = request.CustomerInfo.CustomerPhone.Trim(),
                     CustomerEmail = request.CustomerInfo.CustomerEmail?.Trim(),
                     UserId = request.CustomerInfo.UserId
                 };
 
-                customerId = await _customerRepo.InsertAsync(customer);
+                var customerIdObj = await _customerRepo.InsertAsync(customer);
+                customerId = customerIdObj is int id ? id : (int)customerIdObj;
             }
             else
             {
@@ -124,10 +132,9 @@ namespace SWP.Core.Services
             }
 
             // Xử lý vehicle: Nếu có VehicleId thì dùng, nếu không thì tạo mới từ VehicleInfo
-            Guid vehicleId;
+            int vehicleId;
             if (request.VehicleId.HasValue)
             {
-                // Kiểm tra vehicle tồn tại
                 await EnsureVehicleExists(request.VehicleId.Value);
                 vehicleId = request.VehicleId.Value;
 
@@ -144,16 +151,16 @@ namespace SWP.Core.Services
                 // Tạo vehicle mới và link với customer
                 var vehicle = new Vehicle
                 {
-                    VehicleId = Guid.NewGuid(),
                     VehicleName = request.VehicleInfo.VehicleName.Trim(),
                     VehicleLicensePlate = request.VehicleInfo.VehicleLicensePlate.Trim(),
                     CurrentKm = request.VehicleInfo.CurrentKm,
                     Make = request.VehicleInfo.Make?.Trim(),
                     Model = request.VehicleInfo.Model?.Trim(),
-                    CustomerId = customerId // Link với customer vừa tạo hoặc chọn
+                    CustomerId = customerId
                 };
 
-                vehicleId = await _vehicleRepo.InsertAsync(vehicle);
+                var vehicleIdObj = await _vehicleRepo.InsertAsync(vehicle);
+                vehicleId = vehicleIdObj is int vid ? vid : (int)vehicleIdObj;
             }
             else
             {
@@ -176,7 +183,6 @@ namespace SWP.Core.Services
             // Tạo entity
             var serviceTicket = new ServiceTicket
             {
-                ServiceTicketId = Guid.NewGuid(),
                 BookingId = request.BookingId,
                 VehicleId = vehicleId,
                 CreatedBy = request.CreatedBy,
@@ -186,7 +192,8 @@ namespace SWP.Core.Services
                 ServiceTicketCode = serviceTicketCode
             };
 
-            var serviceTicketId = await _serviceTicketRepo.InsertAsync(serviceTicket);
+            var serviceTicketIdObj = await _serviceTicketRepo.InsertAsync(serviceTicket);
+            var serviceTicketId = serviceTicketIdObj is int stid ? stid : (int)serviceTicketIdObj;
 
             // Nếu có assign technical staff, tạo technical task
             if (request.AssignedToTechnical.HasValue)
@@ -201,9 +208,9 @@ namespace SWP.Core.Services
         }
 
         /// <summary>
-        /// Cập nhật Service Ticket
+        /// Cập nhật Service Ticket (Staff: chỉnh sửa thông tin khách hàng, xe, status)
         /// </summary>
-        public async Task<int> UpdateAsync(Guid id, ServiceTicketUpdateDto request)
+        public async Task<int> UpdateAsync(int id, ServiceTicketUpdateDto request)
         {
             var existing = await _serviceTicketRepo.GetById(id);
             if (existing == null)
@@ -223,6 +230,33 @@ namespace SWP.Core.Services
                 await EnsureBookingExists(request.BookingId.Value);
             }
 
+            // Cập nhật thông tin customer nếu có
+            if (request.CustomerInfo != null)
+            {
+                var vehicle = await _vehicleRepo.GetById(existing.VehicleId);
+                if (vehicle == null)
+                {
+                    throw new NotFoundException("Không tìm thấy vehicle của service ticket này.");
+                }
+
+                if (vehicle.CustomerId.HasValue)
+                {
+                    var customer = await _customerRepo.GetById(vehicle.CustomerId.Value);
+                    if (customer != null)
+                    {
+                        customer.CustomerName = request.CustomerInfo.CustomerName?.Trim();
+                        customer.CustomerPhone = request.CustomerInfo.CustomerPhone.Trim();
+                        customer.CustomerEmail = request.CustomerInfo.CustomerEmail?.Trim();
+                        if (request.CustomerInfo.UserId.HasValue)
+                        {
+                            await EnsureUserExists(request.CustomerInfo.UserId.Value);
+                            customer.UserId = request.CustomerInfo.UserId;
+                        }
+                        await _customerRepo.UpdateAsync(customer.CustomerId, customer);
+                    }
+                }
+            }
+
             // Cập nhật thông tin vehicle nếu có (không đổi vehicle_id)
             if (request.VehicleInfo != null)
             {
@@ -232,21 +266,15 @@ namespace SWP.Core.Services
                     throw new NotFoundException("Không tìm thấy vehicle của service ticket này.");
                 }
 
-                // Cập nhật thông tin vehicle
                 vehicle.VehicleName = request.VehicleInfo.VehicleName.Trim();
                 vehicle.VehicleLicensePlate = request.VehicleInfo.VehicleLicensePlate.Trim();
                 vehicle.CurrentKm = request.VehicleInfo.CurrentKm;
                 vehicle.Make = request.VehicleInfo.Make?.Trim();
                 vehicle.Model = request.VehicleInfo.Model?.Trim();
 
-                // Kiểm tra customer tồn tại nếu có
                 if (request.VehicleInfo.CustomerId.HasValue)
                 {
-                    var customer = await _customerRepo.GetById(request.VehicleInfo.CustomerId.Value);
-                    if (customer == null)
-                    {
-                        throw new NotFoundException("Không tìm thấy customer.");
-                    }
+                    await EnsureCustomerExists(request.VehicleInfo.CustomerId.Value);
                     vehicle.CustomerId = request.VehicleInfo.CustomerId;
                 }
 
@@ -277,7 +305,7 @@ namespace SWP.Core.Services
         /// <summary>
         /// Xóa Service Ticket
         /// </summary>
-        public async Task<int> DeleteAsync(Guid id)
+        public async Task<int> DeleteAsync(int id)
         {
             var existing = await _serviceTicketRepo.GetById(id);
             if (existing == null)
@@ -288,9 +316,9 @@ namespace SWP.Core.Services
         }
 
         /// <summary>
-        /// Assign Service Ticket cho technical staff
+        /// Assign Service Ticket cho technical staff (tạo TechnicalTask)
         /// </summary>
-        public async Task<int> AssignToTechnicalAsync(Guid id, ServiceTicketAssignDto request)
+        public async Task<int> AssignToTechnicalAsync(int id, ServiceTicketAssignDto request)
         {
             var serviceTicket = await _serviceTicketRepo.GetById(id);
             if (serviceTicket == null)
@@ -301,67 +329,21 @@ namespace SWP.Core.Services
             // Kiểm tra technical staff tồn tại
             await EnsureUserExists(request.AssignedToTechnical);
 
-            // Kiểm tra trạng thái
-            if (serviceTicket.ServiceTicketStatus != ServiceTicketStatus.Pending && 
-                serviceTicket.ServiceTicketStatus != ServiceTicketStatus.Assigned)
-            {
-                throw new ValidateException("Chỉ có thể assign service ticket ở trạng thái Pending hoặc Assigned.");
-            }
-
             // Tạo technical task
-            await AssignToTechnicalInternalAsync(id, request.AssignedToTechnical, request.Description);
+            var technicalTaskId = await AssignToTechnicalInternalAsync(id, request.AssignedToTechnical, request.Description);
 
             // Cập nhật trạng thái
             serviceTicket.ServiceTicketStatus = ServiceTicketStatus.Assigned;
             serviceTicket.ModifiedDate = DateTime.UtcNow;
+            await _serviceTicketRepo.UpdateAsync(id, serviceTicket);
 
-            return await _serviceTicketRepo.UpdateAsync(id, serviceTicket);
+            return technicalTaskId;
         }
 
         /// <summary>
-        /// Technical staff nhận task
+        /// Thêm part vào Service Ticket (Staff có thể thêm)
         /// </summary>
-        public async Task<int> AcceptTaskAsync(Guid id, Guid technicalStaffId)
-        {
-            var serviceTicket = await _serviceTicketRepo.GetById(id);
-            if (serviceTicket == null)
-            {
-                throw new NotFoundException("Không tìm thấy service ticket.");
-            }
-
-            // Kiểm tra technical staff tồn tại
-            await EnsureUserExists(technicalStaffId);
-
-            // Tìm technical task
-            var technicalTasks = await GetTechnicalTasksByServiceTicketIdAsync(id);
-            var task = technicalTasks.FirstOrDefault(t => t.AssignedToTechnical == technicalStaffId);
-            
-            if (task == null)
-            {
-                throw new NotFoundException("Không tìm thấy task được assign cho technical staff này.");
-            }
-
-            if (task.TaskStatus != null && task.TaskStatus != 0)
-            {
-                throw new ValidateException("Task này đã được nhận hoặc hoàn thành.");
-            }
-
-            // Cập nhật task
-            task.TaskStatus = 1; // In Progress
-            task.AssignedAt = DateTime.UtcNow;
-            await _technicalTaskRepo.UpdateAsync(task.TechnicalTaskId, task);
-
-            // Cập nhật trạng thái service ticket
-            serviceTicket.ServiceTicketStatus = ServiceTicketStatus.InProgress;
-            serviceTicket.ModifiedDate = DateTime.UtcNow;
-
-            return await _serviceTicketRepo.UpdateAsync(id, serviceTicket);
-        }
-
-        /// <summary>
-        /// Thêm part vào Service Ticket
-        /// </summary>
-        public async Task<Guid> AddPartAsync(Guid id, ServiceTicketAddPartDto request)
+        public async Task<int> AddPartAsync(int id, ServiceTicketAddPartDto request)
         {
             var serviceTicket = await _serviceTicketRepo.GetById(id);
             if (serviceTicket == null)
@@ -382,28 +364,52 @@ namespace SWP.Core.Services
                 throw new ValidateException($"Số lượng tồn kho không đủ. Tồn kho hiện tại: {part.PartStock}");
             }
 
-            // Kiểm tra trạng thái - chỉ cho phép thêm part khi đang in progress
-            if (serviceTicket.ServiceTicketStatus != ServiceTicketStatus.InProgress)
-            {
-                throw new ValidateException("Chỉ có thể thêm part khi service ticket đang ở trạng thái In Progress.");
-            }
-
             // Tạo service ticket detail
             var detail = new ServiceTicketDetail
             {
-                ServiceTicketDetailId = Guid.NewGuid(),
                 ServiceTicketId = id,
                 PartId = request.PartId,
                 Quantity = request.Quantity
             };
 
-            return await _serviceTicketDetailRepo.InsertAsync(detail);
+            var detailIdObj = await _serviceTicketDetailRepo.InsertAsync(detail);
+            return detailIdObj is int did ? did : (int)detailIdObj;
         }
 
         /// <summary>
-        /// Xóa part khỏi Service Ticket
+        /// Thêm garage service vào Service Ticket (Staff có thể thêm)
         /// </summary>
-        public async Task<int> RemovePartAsync(Guid serviceTicketId, Guid serviceTicketDetailId)
+        public async Task<int> AddGarageServiceAsync(int id, ServiceTicketAddGarageServiceDto request)
+        {
+            var serviceTicket = await _serviceTicketRepo.GetById(id);
+            if (serviceTicket == null)
+            {
+                throw new NotFoundException("Không tìm thấy service ticket.");
+            }
+
+            // Kiểm tra garage service tồn tại
+            var garageService = await _garageServiceRepo.GetById(request.GarageServiceId);
+            if (garageService == null)
+            {
+                throw new NotFoundException("Không tìm thấy garage service.");
+            }
+
+            // Tạo service ticket detail
+            var detail = new ServiceTicketDetail
+            {
+                ServiceTicketId = id,
+                GarageServiceId = request.GarageServiceId,
+                Quantity = request.Quantity
+            };
+
+            var detailIdObj = await _serviceTicketDetailRepo.InsertAsync(detail);
+            return detailIdObj is int did ? did : (int)detailIdObj;
+        }
+
+        /// <summary>
+        /// Xóa part/garage service khỏi Service Ticket
+        /// </summary>
+        public async Task<int> RemoveDetailAsync(int serviceTicketId, int serviceTicketDetailId)
         {
             var serviceTicket = await _serviceTicketRepo.GetById(serviceTicketId);
             if (serviceTicket == null)
@@ -425,11 +431,339 @@ namespace SWP.Core.Services
             // Kiểm tra trạng thái
             if (serviceTicket.ServiceTicketStatus == ServiceTicketStatus.Completed)
             {
-                throw new ValidateException("Không thể xóa part khi service ticket đã hoàn thành.");
+                throw new ValidateException("Không thể xóa khi service ticket đã hoàn thành.");
             }
 
             return await _serviceTicketDetailRepo.DeleteAsync(serviceTicketDetailId);
         }
+
+        /// <summary>
+        /// Duyệt parts và services do Mechanic đề xuất
+        /// </summary>
+        public async Task<int> ApproveMechanicProposalAsync(int technicalTaskId, ServiceTicketUpdatePartsServicesDto request, int staffId)
+        {
+            var technicalTask = await _technicalTaskRepo.GetById(technicalTaskId);
+            if (technicalTask == null)
+            {
+                throw new NotFoundException("Không tìm thấy technical task.");
+            }
+
+            var serviceTicket = await _serviceTicketRepo.GetById(technicalTask.ServiceTicketId);
+            if (serviceTicket == null)
+            {
+                throw new NotFoundException("Không tìm thấy service ticket.");
+            }
+
+            // Kiểm tra staff tồn tại
+            await EnsureUserExists(staffId);
+
+            // Xóa các detail cũ của task này (nếu có)
+            var existingDetails = await _serviceTicketDetailRepo.GetAllAsync();
+            var taskDetails = existingDetails.Where(d => d.ServiceTicketId == serviceTicket.ServiceTicketId).ToList();
+            
+            // Thêm/cập nhật parts
+            foreach (var partDto in request.Parts)
+            {
+                var part = await _partRepo.GetById(partDto.PartId);
+                if (part == null)
+                {
+                    throw new NotFoundException($"Không tìm thấy part với ID: {partDto.PartId}");
+                }
+
+                // Kiểm tra số lượng tồn kho
+                if (part.PartStock < partDto.Quantity)
+                {
+                    throw new ValidateException($"Số lượng tồn kho không đủ cho part {part.PartName}. Tồn kho hiện tại: {part.PartStock}");
+                }
+
+                if (partDto.ServiceTicketDetailId.HasValue)
+                {
+                    // Update existing
+                    var detail = await _serviceTicketDetailRepo.GetById(partDto.ServiceTicketDetailId.Value);
+                    if (detail != null)
+                    {
+                        detail.PartId = partDto.PartId;
+                        detail.Quantity = partDto.Quantity;
+                        await _serviceTicketDetailRepo.UpdateAsync(partDto.ServiceTicketDetailId.Value, detail);
+                    }
+                }
+                else
+                {
+                    // Insert new
+                    var detail = new ServiceTicketDetail
+                    {
+                        ServiceTicketId = serviceTicket.ServiceTicketId,
+                        PartId = partDto.PartId,
+                        Quantity = partDto.Quantity
+                    };
+                    var _ = await _serviceTicketDetailRepo.InsertAsync(detail);
+                }
+            }
+
+            // Thêm/cập nhật garage services
+            foreach (var serviceDto in request.GarageServices)
+            {
+                var garageService = await _garageServiceRepo.GetById(serviceDto.GarageServiceId);
+                if (garageService == null)
+                {
+                    throw new NotFoundException($"Không tìm thấy garage service với ID: {serviceDto.GarageServiceId}");
+                }
+
+                if (serviceDto.ServiceTicketDetailId.HasValue)
+                {
+                    // Update existing
+                    var detail = await _serviceTicketDetailRepo.GetById(serviceDto.ServiceTicketDetailId.Value);
+                    if (detail != null)
+                    {
+                        detail.GarageServiceId = serviceDto.GarageServiceId;
+                        detail.Quantity = serviceDto.Quantity;
+                        await _serviceTicketDetailRepo.UpdateAsync(serviceDto.ServiceTicketDetailId.Value, detail);
+                    }
+                }
+                else
+                {
+                    // Insert new
+                    var detail = new ServiceTicketDetail
+                    {
+                        ServiceTicketId = serviceTicket.ServiceTicketId,
+                        GarageServiceId = serviceDto.GarageServiceId,
+                        Quantity = serviceDto.Quantity
+                    };
+                    var _ = await _serviceTicketDetailRepo.InsertAsync(detail);
+                }
+            }
+
+            // Cập nhật trạng thái service ticket
+            serviceTicket.ServiceTicketStatus = ServiceTicketStatus.InProgress;
+            serviceTicket.ModifiedBy = staffId;
+            serviceTicket.ModifiedDate = DateTime.UtcNow;
+            return await _serviceTicketRepo.UpdateAsync(serviceTicket.ServiceTicketId, serviceTicket);
+        }
+
+        #endregion
+
+        #region Mechanic Operations
+
+        /// <summary>
+        /// Lấy danh sách tasks của Mechanic
+        /// </summary>
+        public async Task<PagedResult<MechanicTaskDto>> GetMyTasksAsync(int mechanicId, ServiceTicketFilterDtoRequest filter)
+        {
+            var result = await _serviceTicketRepo.GetMechanicTasksAsync(mechanicId, filter);
+            if (result == null)
+            {
+                throw new NotFoundException("Không tìm thấy danh sách tasks.");
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Lấy chi tiết task của Mechanic
+        /// </summary>
+        public async Task<MechanicTaskDto> GetMyTaskDetailAsync(int technicalTaskId, int mechanicId)
+        {
+            var result = await _serviceTicketRepo.GetMechanicTaskDetailAsync(technicalTaskId, mechanicId);
+            if (result == null)
+            {
+                throw new NotFoundException("Không tìm thấy task.");
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Mechanic đề xuất parts và services (gửi cho Staff duyệt)
+        /// </summary>
+        public async Task<int> ProposePartsServicesAsync(int technicalTaskId, ServiceTicketUpdatePartsServicesDto request, int mechanicId)
+        {
+            var technicalTask = await _technicalTaskRepo.GetById(technicalTaskId);
+            if (technicalTask == null)
+            {
+                throw new NotFoundException("Không tìm thấy technical task.");
+            }
+
+            // Kiểm tra task thuộc về mechanic này
+            if (technicalTask.AssignedToTechnical != mechanicId)
+            {
+                throw new ValidateException("Bạn không có quyền chỉnh sửa task này.");
+            }
+
+            // Validate parts và services
+            foreach (var partDto in request.Parts)
+            {
+                var part = await _partRepo.GetById(partDto.PartId);
+                if (part == null)
+                {
+                    throw new NotFoundException($"Không tìm thấy part với ID: {partDto.PartId}");
+                }
+            }
+
+            foreach (var serviceDto in request.GarageServices)
+            {
+                var garageService = await _garageServiceRepo.GetById(serviceDto.GarageServiceId);
+                if (garageService == null)
+                {
+                    throw new NotFoundException($"Không tìm thấy garage service với ID: {serviceDto.GarageServiceId}");
+                }
+            }
+
+            // Lưu đề xuất vào service ticket detail (có thể đánh dấu là pending approval)
+            // Ở đây ta sẽ lưu trực tiếp, Staff sẽ duyệt sau
+            var serviceTicket = await _serviceTicketRepo.GetById(technicalTask.ServiceTicketId);
+            if (serviceTicket == null)
+            {
+                throw new NotFoundException("Không tìm thấy service ticket.");
+            }
+
+            // Xóa các detail cũ (nếu có)
+            var existingDetails = await _serviceTicketDetailRepo.GetAllAsync();
+            var taskDetails = existingDetails
+                .Where(d => d.ServiceTicketId == serviceTicket.ServiceTicketId && d.IsDeleted == 0)
+                .ToList();
+
+            // Thêm parts
+            foreach (var partDto in request.Parts)
+            {
+                if (partDto.ServiceTicketDetailId.HasValue)
+                {
+                    var detail = await _serviceTicketDetailRepo.GetById(partDto.ServiceTicketDetailId.Value);
+                    if (detail != null)
+                    {
+                        detail.PartId = partDto.PartId;
+                        detail.Quantity = partDto.Quantity;
+                        await _serviceTicketDetailRepo.UpdateAsync(partDto.ServiceTicketDetailId.Value, detail);
+                    }
+                }
+                else
+                {
+                    var detail = new ServiceTicketDetail
+                    {
+                        ServiceTicketId = serviceTicket.ServiceTicketId,
+                        PartId = partDto.PartId,
+                        Quantity = partDto.Quantity
+                    };
+                    var _ = await _serviceTicketDetailRepo.InsertAsync(detail);
+                }
+            }
+
+            // Thêm garage services
+            foreach (var serviceDto in request.GarageServices)
+            {
+                if (serviceDto.ServiceTicketDetailId.HasValue)
+                {
+                    var detail = await _serviceTicketDetailRepo.GetById(serviceDto.ServiceTicketDetailId.Value);
+                    if (detail != null)
+                    {
+                        detail.GarageServiceId = serviceDto.GarageServiceId;
+                        detail.Quantity = serviceDto.Quantity;
+                        await _serviceTicketDetailRepo.UpdateAsync(serviceDto.ServiceTicketDetailId.Value, detail);
+                    }
+                }
+                else
+                {
+                    var detail = new ServiceTicketDetail
+                    {
+                        ServiceTicketId = serviceTicket.ServiceTicketId,
+                        GarageServiceId = serviceDto.GarageServiceId,
+                        Quantity = serviceDto.Quantity
+                    };
+                    var _ = await _serviceTicketDetailRepo.InsertAsync(detail);
+                }
+            }
+
+            return 1;
+        }
+
+        /// <summary>
+        /// Mechanic bắt đầu làm task (duyệt và bắt đầu)
+        /// </summary>
+        public async Task<int> StartTaskAsync(int technicalTaskId, int mechanicId)
+        {
+            var technicalTask = await _technicalTaskRepo.GetById(technicalTaskId);
+            if (technicalTask == null)
+            {
+                throw new NotFoundException("Không tìm thấy technical task.");
+            }
+
+            // Kiểm tra task thuộc về mechanic này
+            if (technicalTask.AssignedToTechnical != mechanicId)
+            {
+                throw new ValidateException("Bạn không có quyền thực hiện task này.");
+            }
+
+            // Kiểm tra trạng thái
+            if (technicalTask.TaskStatus != null && technicalTask.TaskStatus != 0)
+            {
+                throw new ValidateException("Task này đã được bắt đầu hoặc hoàn thành.");
+            }
+
+            // Cập nhật task
+            technicalTask.TaskStatus = 1; // In Progress
+            technicalTask.AssignedAt = DateTime.UtcNow;
+            await _technicalTaskRepo.UpdateAsync(technicalTaskId, technicalTask);
+
+            // Cập nhật trạng thái service ticket
+            var serviceTicket = await _serviceTicketRepo.GetById(technicalTask.ServiceTicketId);
+            if (serviceTicket != null)
+            {
+                serviceTicket.ServiceTicketStatus = ServiceTicketStatus.InProgress;
+                serviceTicket.ModifiedDate = DateTime.UtcNow;
+                await _serviceTicketRepo.UpdateAsync(serviceTicket.ServiceTicketId, serviceTicket);
+            }
+
+            return 1;
+        }
+
+        /// <summary>
+        /// Mechanic confirm task đã hoàn thành
+        /// </summary>
+        public async Task<int> ConfirmTaskAsync(int technicalTaskId, int mechanicId)
+        {
+            var technicalTask = await _technicalTaskRepo.GetById(technicalTaskId);
+            if (technicalTask == null)
+            {
+                throw new NotFoundException("Không tìm thấy technical task.");
+            }
+
+            // Kiểm tra task thuộc về mechanic này
+            if (technicalTask.AssignedToTechnical != mechanicId)
+            {
+                throw new ValidateException("Bạn không có quyền confirm task này.");
+            }
+
+            // Kiểm tra trạng thái
+            if (technicalTask.TaskStatus != 1)
+            {
+                throw new ValidateException("Chỉ có thể confirm task đang ở trạng thái In Progress.");
+            }
+
+            // Cập nhật task
+            technicalTask.TaskStatus = 2; // Completed
+            technicalTask.ConfirmedBy = mechanicId;
+            technicalTask.ConfirmedAt = DateTime.UtcNow;
+            await _technicalTaskRepo.UpdateAsync(technicalTaskId, technicalTask);
+
+            // Kiểm tra xem tất cả tasks của service ticket đã hoàn thành chưa
+            var allTasks = await _technicalTaskRepo.GetAllAsync();
+            var serviceTicketTasks = allTasks
+                .Where(t => t.ServiceTicketId == technicalTask.ServiceTicketId && t.IsDeleted == 0)
+                .ToList();
+
+            // Nếu tất cả tasks đã hoàn thành, cập nhật status service ticket
+            if (serviceTicketTasks.All(t => t.TaskStatus == 2))
+            {
+                var serviceTicket = await _serviceTicketRepo.GetById(technicalTask.ServiceTicketId);
+                if (serviceTicket != null)
+                {
+                    serviceTicket.ServiceTicketStatus = ServiceTicketStatus.Completed;
+                    serviceTicket.ModifiedDate = DateTime.UtcNow;
+                    await _serviceTicketRepo.UpdateAsync(serviceTicket.ServiceTicketId, serviceTicket);
+                }
+            }
+
+            return 1;
+        }
+
+        #endregion
 
         #region Helpers
 
@@ -438,7 +772,7 @@ namespace SWP.Core.Services
         /// </summary>
         private static void ValidateCreatePayload(ServiceTicketCreateDto request)
         {
-            if (request.CreatedBy == Guid.Empty)
+            if (request.CreatedBy == 0)
             {
                 throw new ValidateException("Người tạo không được để trống.");
             }
@@ -494,7 +828,7 @@ namespace SWP.Core.Services
         /// </summary>
         private static void ValidateUpdatePayload(ServiceTicketUpdateDto request)
         {
-            if (request.ModifiedBy == Guid.Empty)
+            if (request.ModifiedBy == 0)
             {
                 throw new ValidateException("Người cập nhật không được để trống.");
             }
@@ -513,6 +847,15 @@ namespace SWP.Core.Services
                 }
             }
 
+            // Nếu có CustomerInfo thì validate
+            if (request.CustomerInfo != null)
+            {
+                if (string.IsNullOrWhiteSpace(request.CustomerInfo.CustomerPhone))
+                {
+                    throw new ValidateException("Số điện thoại khách hàng không được để trống.");
+                }
+            }
+
             if (!string.IsNullOrWhiteSpace(request.ServiceTicketCode) && request.ServiceTicketCode.Length > 20)
             {
                 throw new ValidateException("Mã service ticket không được vượt quá 20 ký tự.");
@@ -522,7 +865,7 @@ namespace SWP.Core.Services
         /// <summary>
         /// Kiểm tra vehicle tồn tại
         /// </summary>
-        private async Task EnsureVehicleExists(Guid vehicleId)
+        private async Task EnsureVehicleExists(int vehicleId)
         {
             var vehicle = await _vehicleRepo.GetById(vehicleId);
             if (vehicle == null)
@@ -534,7 +877,7 @@ namespace SWP.Core.Services
         /// <summary>
         /// Kiểm tra user tồn tại
         /// </summary>
-        private async Task EnsureUserExists(Guid userId)
+        private async Task EnsureUserExists(int userId)
         {
             var user = await _userRepo.GetById(userId);
             if (user == null)
@@ -544,9 +887,21 @@ namespace SWP.Core.Services
         }
 
         /// <summary>
+        /// Kiểm tra customer tồn tại
+        /// </summary>
+        private async Task EnsureCustomerExists(int customerId)
+        {
+            var customer = await _customerRepo.GetById(customerId);
+            if (customer == null)
+            {
+                throw new NotFoundException("Không tìm thấy customer.");
+            }
+        }
+
+        /// <summary>
         /// Kiểm tra booking tồn tại
         /// </summary>
-        private async Task EnsureBookingExists(Guid bookingId)
+        private async Task EnsureBookingExists(int bookingId)
         {
             var booking = await _bookingRepo.GetById(bookingId);
             if (booking == null)
@@ -558,7 +913,7 @@ namespace SWP.Core.Services
         /// <summary>
         /// Kiểm tra mã code unique
         /// </summary>
-        private async Task EnsureCodeUnique(string code, Guid? excludeId)
+        private async Task EnsureCodeUnique(string code, int? excludeId)
         {
             var exists = await _serviceTicketRepo.CheckCodeExistsAsync(code, excludeId);
             if (exists)
@@ -592,11 +947,10 @@ namespace SWP.Core.Services
         /// <summary>
         /// Assign technical staff internal
         /// </summary>
-        private async Task AssignToTechnicalInternalAsync(Guid serviceTicketId, Guid technicalStaffId, string description)
+        private async Task<int> AssignToTechnicalInternalAsync(int serviceTicketId, int technicalStaffId, string description)
         {
             var technicalTask = new TechnicalTask
             {
-                TechnicalTaskId = Guid.NewGuid(),
                 ServiceTicketId = serviceTicketId,
                 Description = description,
                 AssignedToTechnical = technicalStaffId,
@@ -604,20 +958,10 @@ namespace SWP.Core.Services
                 TaskStatus = 0 // Pending
             };
 
-            await _technicalTaskRepo.InsertAsync(technicalTask);
-        }
-
-        /// <summary>
-        /// Lấy technical tasks theo service ticket id
-        /// </summary>
-        private async Task<List<TechnicalTask>> GetTechnicalTasksByServiceTicketIdAsync(Guid serviceTicketId)
-        {
-            // Tạm thời dùng GetAllAsync và filter, có thể tối ưu sau
-            var allTasks = await _technicalTaskRepo.GetAllAsync();
-            return allTasks.Where(t => t.ServiceTicketId == serviceTicketId).ToList();
+            var taskIdObj = await _technicalTaskRepo.InsertAsync(technicalTask);
+            return taskIdObj is int tid ? tid : (int)taskIdObj;
         }
 
         #endregion
     }
 }
-

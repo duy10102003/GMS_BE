@@ -6,26 +6,28 @@ namespace SWP.Core.Dtos.SeriveTicketDto
     /// </summary>
     public class ServiceTicketListItemDto
     {
-        public Guid ServiceTicketId { get; set; }
+        public int ServiceTicketId { get; set; }
         public string? ServiceTicketCode { get; set; }
-        public Guid? BookingId { get; set; }
-        public Guid VehicleId { get; set; }
+        public int? BookingId { get; set; }
+        public int VehicleId { get; set; }
         public string? VehicleName { get; set; }
         public string? VehicleLicensePlate { get; set; }
-        public Guid CustomerId { get; set; }
+        public int CustomerId { get; set; }
         public string? CustomerName { get; set; }
         public string? CustomerPhone { get; set; }
-        public Guid CreatedBy { get; set; }
+        public int CreatedBy { get; set; }
         public string? CreatedByName { get; set; }
         public DateTime? CreatedDate { get; set; }
-        public Guid? ModifiedBy { get; set; }
+        public int? ModifiedBy { get; set; }
         public string? ModifiedByName { get; set; }
         public DateTime? ModifiedDate { get; set; }
         public byte? ServiceTicketStatus { get; set; }
         public string? InitialIssue { get; set; }
-        public Guid? AssignedToTechnical { get; set; }
+        public int? AssignedToTechnical { get; set; }
         public string? AssignedToTechnicalName { get; set; }
     }
 }
+
+
 
 
