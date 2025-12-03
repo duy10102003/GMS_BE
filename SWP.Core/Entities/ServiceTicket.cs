@@ -9,24 +9,24 @@ namespace SWP.Core.Entities
     {
         [Column("service_ticket_id")]
         [Key]
-        public Guid ServiceTicketId { get; set; }
+        public int ServiceTicketId { get; set; }
 
         [Column("booking_id")]
-        public Guid? BookingId { get; set; }
+        public int? BookingId { get; set; }
 
         [Column("vehicle_id")]
         [Required]
-        public Guid VehicleId { get; set; }
+        public int VehicleId { get; set; }
 
         [Column("created_by")]
         [Required]
-        public Guid CreatedBy { get; set; }
+        public int CreatedBy { get; set; }
 
         [Column("created_date")]
         public DateTime? CreatedDate { get; set; }
 
         [Column("modified_by")]
-        public Guid? ModifiedBy { get; set; }
+        public int? ModifiedBy { get; set; }
 
         [Column("modified_date")]
         public DateTime? ModifiedDate { get; set; }
@@ -38,7 +38,11 @@ namespace SWP.Core.Entities
         public string? InitialIssue { get; set; }
 
         [Column("service_ticket_code")]
+        [MaxLength(20)]
         public string? ServiceTicketCode { get; set; }
+
+        [Column("is_deleted")]
+        public int IsDeleted { get; set; } = 0;
 
         // Navigation properties
         public Booking? Booking { get; set; }
@@ -50,4 +54,3 @@ namespace SWP.Core.Entities
         public ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
     }
 }
-

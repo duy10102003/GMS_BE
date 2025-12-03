@@ -9,11 +9,11 @@ namespace SWP.Core.Entities
     {
         [Column("technical_task_id")]
         [Key]
-        public Guid TechnicalTaskId { get; set; }
+        public int TechnicalTaskId { get; set; }
 
         [Column("service_ticket_id")]
         [Required]
-        public Guid ServiceTicketId { get; set; }
+        public int ServiceTicketId { get; set; }
 
         [Column("description")]
         [Required]
@@ -21,7 +21,7 @@ namespace SWP.Core.Entities
         public string Description { get; set; } = string.Empty;
 
         [Column("assigned_to_technical")]
-        public Guid? AssignedToTechnical { get; set; }
+        public int? AssignedToTechnical { get; set; }
 
         [Column("assigned_at")]
         public DateTime? AssignedAt { get; set; }
@@ -30,10 +30,13 @@ namespace SWP.Core.Entities
         public byte? TaskStatus { get; set; }
 
         [Column("confirmed_by")]
-        public Guid? ConfirmedBy { get; set; }
+        public int? ConfirmedBy { get; set; }
 
         [Column("confirmed_at")]
         public DateTime? ConfirmedAt { get; set; }
+
+        [Column("is_deleted")]
+        public int IsDeleted { get; set; } = 0;
 
         // Navigation properties
         public ServiceTicket ServiceTicket { get; set; } = null!;
@@ -41,4 +44,3 @@ namespace SWP.Core.Entities
         public User? ConfirmedByUser { get; set; }
     }
 }
-

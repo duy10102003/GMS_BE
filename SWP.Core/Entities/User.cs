@@ -9,7 +9,7 @@ namespace SWP.Core.Entities
     {
         [Column("user_id")]
         [Key]
-        public Guid UserId { get; set; }
+        public int UserId { get; set; }
 
         [Column("full_name")]
         public string? FullName { get; set; }
@@ -30,11 +30,13 @@ namespace SWP.Core.Entities
         public string? Status { get; set; }
 
         [Column("role_id")]
-        public Guid? RoleId { get; set; }
+        public int? RoleId { get; set; }
+
+        [Column("is_deleted")]
+        public int IsDeleted { get; set; } = 0;
 
         // Navigation properties
         public Role? Role { get; set; }
         public Customer? Customer { get; set; }
     }
 }
-
