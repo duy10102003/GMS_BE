@@ -11,18 +11,20 @@ namespace SWP.Core.Dtos.SeriveTicketDto
         /// <summary>
         /// ID của booking (nullable)
         /// </summary>
-        public Guid? BookingId { get; set; }
+        public int? BookingId { get; set; }
 
         /// <summary>
         /// Thông tin vehicle để cập nhật (nullable - chỉ cập nhật thông tin, không đổi vehicle_id)
         /// </summary>
         public VehicleInfoDto? VehicleInfo { get; set; }
 
+        public CustomerInfoDto? CustomerInfo { get; set; }
+
         /// <summary>
         /// ID của người cập nhật (bắt buộc)
         /// </summary>
         [Required(ErrorMessage = "Người cập nhật không được để trống.")]
-        public Guid ModifiedBy { get; set; }
+        public int ModifiedBy { get; set; }
 
         /// <summary>
         /// Vấn đề ban đầu

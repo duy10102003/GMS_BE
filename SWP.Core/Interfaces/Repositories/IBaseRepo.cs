@@ -29,12 +29,20 @@ namespace SWP.Core.Interfaces.Repositories
         Task<T?> GetById(Guid id);
 
         /// <summary>
+        /// Hàm lấy thông tin chi tiết theo id (int)
+        /// </summary>
+        /// <param name="id"> id của đối tượng mà mình muốn tìm </param>
+        /// <returns>đối tượng có id phù hợp</returns>
+        /// Created By: DuyLC (02/12/2025)
+        Task<T?> GetById(int id);
+
+        /// <summary>
         /// Hàm thêm mới bản ghi trong database
         /// </summary>
         /// <param name="entity">thuộc tính của thực thể mình muốn thêm</param>
-        /// <returns>trả về số dòng bị ảnh hưởng </returns>
+        /// <returns>trả về id của đối tượng vừa thêm</returns>
         /// Created By: DuyLC (29/11/2025)
-        Task<Guid> InsertAsync(T entity);
+        Task<object> InsertAsync(T entity);
 
         /// <summary>
         /// Hàm cập nhật 1 bản ghi theo id
@@ -46,12 +54,29 @@ namespace SWP.Core.Interfaces.Repositories
         Task<int> UpdateAsync(Guid id, T entity);
 
         /// <summary>
+        /// Hàm cập nhật 1 bản ghi theo id (int)
+        /// </summary>
+        /// <param name="id"> id của bản ghi mình muốn cập nhật</param>
+        /// <param name="entity">thuộc tính của thực thể</param>
+        /// <returns>số dòng bị ảnh hưởng</returns>
+        /// Created By: DuyLC (02/12/2025)
+        Task<int> UpdateAsync(int id, T entity);
+
+        /// <summary>
         /// xóa mềm 1 bản ghi trong database
         /// </summary>
         /// <param name="id">id mà mình muốn xóa </param>
         /// <returns>số dòng bị ảnh hưởng </returns>
         /// Created By: DuyLC (29/11/2025)
         Task<int> DeleteAsync(Guid id);
+
+        /// <summary>
+        /// xóa mềm 1 bản ghi trong database (int ID)
+        /// </summary>
+        /// <param name="id">id mà mình muốn xóa </param>
+        /// <returns>số dòng bị ảnh hưởng </returns>
+        /// Created By: DuyLC (02/12/2025)
+        Task<int> DeleteAsync(int id);
 
     }
 }

@@ -28,6 +28,8 @@ builder.Services.AddScoped<IBaseRepo<Booking>, BaseRepo<Booking>>();
 builder.Services.AddScoped<IBaseRepo<Customer>, BaseRepo<Customer>>();
 builder.Services.AddScoped<IBaseRepo<ServiceTicketDetail>, BaseRepo<ServiceTicketDetail>>();
 builder.Services.AddScoped<IBaseRepo<TechnicalTask>, BaseRepo<TechnicalTask>>();
+builder.Services.AddScoped<IBaseRepo<GarageService>, BaseRepo<GarageService>>();
+builder.Services.AddScoped<IBaseRepo<Inventory>, BaseRepo<Inventory>>();
 //Khai báo cross để FE gọi đến 
 builder.Services.AddCors(options =>
 {

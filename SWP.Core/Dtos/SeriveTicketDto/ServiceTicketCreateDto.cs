@@ -11,12 +11,12 @@ namespace SWP.Core.Dtos.SeriveTicketDto
         /// <summary>
         /// ID của booking (nullable)
         /// </summary>
-        public Guid? BookingId { get; set; }
+        public int? BookingId { get; set; }
 
         /// <summary>
         /// ID của customer có sẵn (nullable - nếu có thì dùng customer này, không thì tạo mới từ CustomerInfo)
         /// </summary>
-        public Guid? CustomerId { get; set; }
+        public int? CustomerId { get; set; }
 
         /// <summary>
         /// Thông tin customer mới (nullable - chỉ dùng khi CustomerId không có)
@@ -26,7 +26,7 @@ namespace SWP.Core.Dtos.SeriveTicketDto
         /// <summary>
         /// ID của vehicle có sẵn (nullable - nếu có thì dùng vehicle này, không thì tạo mới từ VehicleInfo)
         /// </summary>
-        public Guid? VehicleId { get; set; }
+        public int? VehicleId { get; set; }
 
         /// <summary>
         /// Thông tin vehicle mới (nullable - chỉ dùng khi VehicleId không có)
@@ -37,7 +37,7 @@ namespace SWP.Core.Dtos.SeriveTicketDto
         /// ID của người tạo (bắt buộc)
         /// </summary>
         [Required(ErrorMessage = "Người tạo không được để trống.")]
-        public Guid CreatedBy { get; set; }
+        public int CreatedBy { get; set; }
 
         /// <summary>
         /// Vấn đề ban đầu
@@ -53,7 +53,7 @@ namespace SWP.Core.Dtos.SeriveTicketDto
         /// <summary>
         /// ID của technical staff được assign (nullable, có thể assign sau)
         /// </summary>
-        public Guid? AssignedToTechnical { get; set; }
+        public int? AssignedToTechnical { get; set; }
 
         /// <summary>
         /// Mô tả công việc khi assign (nullable, chỉ dùng khi có AssignedToTechnical)

@@ -3,16 +3,16 @@ using System.ComponentModel.DataAnnotations;
 namespace SWP.Core.Dtos.SeriveTicketDto
 {
     /// <summary>
-    /// DTO cho thêm part vào Service Ticket
-    /// Created by: DuyLC(01/12/2025)
+    /// DTO cho thêm garage service vào Service Ticket
+    /// Created by: DuyLC(02/12/2025)
     /// </summary>
-    public class ServiceTicketAddPartDto
+    public class ServiceTicketAddGarageServiceDto
     {
         /// <summary>
-        /// ID của part
+        /// ID của garage service
         /// </summary>
-        [Required(ErrorMessage = "Part ID không được để trống.")]
-        public int PartId { get; set; }
+        [Required(ErrorMessage = "Garage Service ID không được để trống.")]
+        public int GarageServiceId { get; set; }
 
         /// <summary>
         /// Số lượng
@@ -22,7 +22,4 @@ namespace SWP.Core.Dtos.SeriveTicketDto
         public int Quantity { get; set; }
     }
 }
-
-
-
 

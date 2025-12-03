@@ -9,6 +9,11 @@ namespace SWP.Core.Dtos.SeriveTicketDto
     public class CustomerInfoDto
     {
         /// <summary>
+        /// ID của customer (dùng cho response, nullable cho request)
+        /// </summary>
+        public int? CustomerId { get; set; }
+
+        /// <summary>
         /// Tên khách hàng
         /// </summary>
         [MaxLength(100, ErrorMessage = "Tên khách hàng không được vượt quá 100 ký tự.")]
@@ -31,8 +36,10 @@ namespace SWP.Core.Dtos.SeriveTicketDto
         /// <summary>
         /// ID của user (nếu khách hàng có tài khoản)
         /// </summary>
-        public Guid? UserId { get; set; }
+        public int? UserId { get; set; }
     }
 }
+
+
 
 

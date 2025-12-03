@@ -127,11 +127,33 @@ namespace MISA.QLSX.Infrastructure.Repositories
         public async Task<T?> GetById(Guid id)
         {
             //câu lệnh sql lấy chi tiết theo id
-            var sql = $"select * from {_tableName} where  {_tableName}_id = @id and is_deleted = 0";
+            var sql = $"select * from {_tableName} where {_keyColumn} = @id and is_deleted = 0";
             //dùng dynamic truyền tham số vào câu lệnh sql
             var parameter = new DynamicParameters();
             parameter.Add("@id", id);
             Console.WriteLine(sql);
+            // kết nối đến database
+            using (var connection = new MySqlConnection(_connection))
+            {
+                // thực hiện câu lệnh sql
+                var result = await connection.QueryAsync<T>(sql, parameter);
+                return result.FirstOrDefault();
+            }
+        }
+
+        /// <summary>
+        /// Hàm lấy thông tin chi tiết theo id (int)
+        /// </summary>
+        /// <param name="id"> id của đối tượng mà mình muốn tìm </param>
+        /// <returns>đối tượng có id phù hợp</returns>
+        /// Created By: DuyLC (02/12/2025)
+        public async Task<T?> GetById(int id)
+        {
+            //câu lệnh sql lấy chi tiết theo id
+            var sql = $"select * from {_tableName} where {_keyColumn} = @id and is_deleted = 0";
+            //dùng dynamic truyền tham số vào câu lệnh sql
+            var parameter = new DynamicParameters();
+            parameter.Add("@id", id);
             // kết nối đến database
             using (var connection = new MySqlConnection(_connection))
             {
@@ -146,7 +168,7 @@ namespace MISA.QLSX.Infrastructure.Repositories
         /// <param name="entity">thông tin đối tượng cần insert</param>
         /// <returns>id của đối tượng vừa thêm</returns>
         /// Created By: DuyLC (29/11/2025)
-        public async Task<Guid> InsertAsync(T entity)
+        public async Task<object> InsertAsync(T entity)
         {
             
             var props = typeof(T).GetProperties();
@@ -161,6 +183,8 @@ namespace MISA.QLSX.Infrastructure.Repositories
             {
                 key.SetValue(entity, Guid.NewGuid());
             }
+            // kiểm tra nếu key là int và giá trị là 0, thì để database tự generate (AUTO_INCREMENT)
+            // hoặc nếu cần, có thể generate ID ở đây
             //câu lệnh sql
             var sql = $"INSERT INTO {_tableName} ({columns}) VALUES ({param})";
             // thực hiện kết nối 
@@ -168,7 +192,7 @@ namespace MISA.QLSX.Infrastructure.Repositories
             {
                 // thực thi câu lệnh
                 await connection.ExecuteAsync(sql, param: entity);
-                return (Guid)key.GetValue(entity)!;
+                return key.GetValue(entity)!;
             }
         }
         /// <summary>
@@ -193,6 +217,52 @@ namespace MISA.QLSX.Infrastructure.Repositories
 
             using var connection = new MySqlConnection(_connection);
             return await connection.ExecuteAsync(sql, parameters);
+        }
+
+        /// <summary>
+        /// Hàm cập nhật thông tin (int ID)
+        /// </summary>
+        /// <param name="id">id của đối tượng cần cật nhập</param>
+        /// <param name="entity">thông tin cập nhật</param>
+        /// <returns>số dòng bị ảnh hưởng</returns>
+        /// Created By: DuyLC (02/12/2025)
+        public async Task<int> UpdateAsync(int id, T entity)
+        {
+            var props = typeof(T).GetProperties()
+                           .Where(p => p != _keyAtribute);
+
+            var setClause = string.Join(", ",
+                props.Select(p => $"{getColumnName(p)} = @{p.Name}"));
+
+            var sql = $"UPDATE {_tableName} SET {setClause} WHERE {_keyColumn} = @id";
+
+            var parameters = new DynamicParameters(entity);
+            parameters.Add("@id", id);
+
+            using var connection = new MySqlConnection(_connection);
+            return await connection.ExecuteAsync(sql, parameters);
+        }
+
+        /// <summary>
+        /// xóa mềm 1 bản ghi trong database (int ID)
+        /// </summary>
+        /// <param name="id">id mà mình muốn xóa </param>
+        /// <returns>số dòng bị ảnh hưởng </returns>
+        /// Created By: DuyLC (02/12/2025)
+        public async Task<int> DeleteAsync(int id)
+        {
+            //câu lệnh sql xóa mềm theo id
+            var sql = $"UPDATE {_tableName} SET is_deleted = 1 WHERE {_keyColumn} = @id;";
+            //dùng dynamic truyền tham số vào câu lệnh sql
+            var parameter = new DynamicParameters();
+            parameter.Add("@id", id);
+            // kết nối đến database
+            using (var connection = new MySqlConnection(_connection))
+            {
+                // thực hiện câu lệnh sql
+                var result = await connection.ExecuteAsync(sql, parameter);
+                return result;
+            }
         }
     }
 }
