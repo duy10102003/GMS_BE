@@ -18,9 +18,11 @@ builder.Services.AddSwaggerGen();
 
 //Đăng ký Service
 builder.Services.AddScoped<IServiceTicketService, ServiceTicketService>();
+builder.Services.AddScoped<IGarageServiceService, GarageServiceService>();
 
 //Đăng ký Repo
 builder.Services.AddScoped<IServiceTicketRepo, ServiceTicketRepo>();
+builder.Services.AddScoped<IGarageServiceRepo, GarageServiceRepo>();
 builder.Services.AddScoped<IBaseRepo<User>, BaseRepo<User>>();
 builder.Services.AddScoped<IBaseRepo<Vehicle>, BaseRepo<Vehicle>>();
 builder.Services.AddScoped<IBaseRepo<Part>, BaseRepo<Part>>();
@@ -35,7 +37,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:5173")
+        policy.WithOrigins("http://localhost:5175")
               .AllowAnyHeader()
               .AllowAnyMethod();
     });

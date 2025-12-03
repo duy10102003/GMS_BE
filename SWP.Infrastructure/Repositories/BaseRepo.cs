@@ -59,7 +59,9 @@ namespace MISA.QLSX.Infrastructure.Repositories
             {
                 return $"`{columnAttribute.Name}`";
             }
-            return $"`{property.Name}`";
+            // Nếu không có ColumnAttribute, throw exception thay vì trả về property name
+            // (điều này không nên xảy ra vì đã filter trước)
+            throw new ValidateException($"Property {property.Name} không có [Column] attribute.");
         }
 
         /// <summary>
@@ -170,12 +172,36 @@ namespace MISA.QLSX.Infrastructure.Repositories
         /// Created By: DuyLC (29/11/2025)
         public async Task<object> InsertAsync(T entity)
         {
+            // Chỉ lấy các properties có [Column] attribute (loại bỏ navigation properties)
+            var props = typeof(T).GetProperties()
+                .Where(p => Attribute.IsDefined(p, typeof(ColumnAttribute)))
+                .ToList();
             
-            var props = typeof(T).GetProperties();
+            if (!props.Any())
+            {
+                throw new ValidateException($"Entity {typeof(T).Name} không có properties nào có [Column] attribute.");
+            }
+            
             // lấy ra danh sách các cột cách nhau bằng dấu , cho câu lệnh insert
             var columns = string.Join(", ", props.Select(p => getColumnName(p)));
-            // lấy ra danh sách param cần truyền vào dựa vào tên các cột đã lấy
-            var param = string.Join(", ", props.Select(p => $"@{p.Name}"));
+            // lấy ra danh sách param cần truyền vào - sử dụng tên cột từ ColumnAttribute
+            var paramNames = new List<string>();
+            var parameters = new DynamicParameters();
+            
+            foreach (var prop in props)
+            {
+                var columnAttr = (ColumnAttribute?)Attribute.GetCustomAttribute(prop, typeof(ColumnAttribute));
+                if (columnAttr != null)
+                {
+                    var paramName = $"@p{prop.Name}";
+                    paramNames.Add(paramName);
+                    var value = prop.GetValue(entity);
+                    parameters.Add(paramName, value);
+                }
+            }
+            
+            var param = string.Join(", ", paramNames);
+            
             //tạo new Guid mới
             var key = _keyAtribute;
             // kiểm tra nếu key là Guid mới tạo ra id mới 
@@ -185,13 +211,14 @@ namespace MISA.QLSX.Infrastructure.Repositories
             }
             // kiểm tra nếu key là int và giá trị là 0, thì để database tự generate (AUTO_INCREMENT)
             // hoặc nếu cần, có thể generate ID ở đây
+            
             //câu lệnh sql
             var sql = $"INSERT INTO {_tableName} ({columns}) VALUES ({param})";
             // thực hiện kết nối 
             using (var connection = new MySqlConnection(_connection))
             {
                 // thực thi câu lệnh
-                await connection.ExecuteAsync(sql, param: entity);
+                await connection.ExecuteAsync(sql, parameters);
                 return key.GetValue(entity)!;
             }
         }
@@ -204,15 +231,30 @@ namespace MISA.QLSX.Infrastructure.Repositories
         /// Created By: DuyLC (29/11/2025)
         public async Task<int> UpdateAsync(Guid id, T entity)
         {
+            // Chỉ lấy các properties có [Column] attribute và không phải key (loại bỏ navigation properties)
             var props = typeof(T).GetProperties()
-                           .Where(p => p != _keyAtribute);
+                .Where(p => p != _keyAtribute && Attribute.IsDefined(p, typeof(ColumnAttribute)))
+                .ToList();
 
-            var setClause = string.Join(", ",
-                props.Select(p => $"{getColumnName(p)} = @{p.Name}"));
+            if (!props.Any())
+            {
+                throw new ValidateException($"Entity {typeof(T).Name} không có properties nào có [Column] attribute để update.");
+            }
 
+            var setClauses = new List<string>();
+            var parameters = new DynamicParameters();
+            
+            foreach (var prop in props)
+            {
+                var columnName = getColumnName(prop);
+                var paramName = $"@p{prop.Name}";
+                setClauses.Add($"{columnName} = {paramName}");
+                var value = prop.GetValue(entity);
+                parameters.Add(paramName, value);
+            }
+
+            var setClause = string.Join(", ", setClauses);
             var sql = $"UPDATE {_tableName} SET {setClause} WHERE {_keyColumn} = @id";
-
-            var parameters = new DynamicParameters(entity);
             parameters.Add("@id", id);
 
             using var connection = new MySqlConnection(_connection);
@@ -228,15 +270,30 @@ namespace MISA.QLSX.Infrastructure.Repositories
         /// Created By: DuyLC (02/12/2025)
         public async Task<int> UpdateAsync(int id, T entity)
         {
+            // Chỉ lấy các properties có [Column] attribute và không phải key (loại bỏ navigation properties)
             var props = typeof(T).GetProperties()
-                           .Where(p => p != _keyAtribute);
+                .Where(p => p != _keyAtribute && Attribute.IsDefined(p, typeof(ColumnAttribute)))
+                .ToList();
 
-            var setClause = string.Join(", ",
-                props.Select(p => $"{getColumnName(p)} = @{p.Name}"));
+            if (!props.Any())
+            {
+                throw new ValidateException($"Entity {typeof(T).Name} không có properties nào có [Column] attribute để update.");
+            }
 
+            var setClauses = new List<string>();
+            var parameters = new DynamicParameters();
+            
+            foreach (var prop in props)
+            {
+                var columnName = getColumnName(prop);
+                var paramName = $"@p{prop.Name}";
+                setClauses.Add($"{columnName} = {paramName}");
+                var value = prop.GetValue(entity);
+                parameters.Add(paramName, value);
+            }
+
+            var setClause = string.Join(", ", setClauses);
             var sql = $"UPDATE {_tableName} SET {setClause} WHERE {_keyColumn} = @id";
-
-            var parameters = new DynamicParameters(entity);
             parameters.Add("@id", id);
 
             using var connection = new MySqlConnection(_connection);

@@ -358,13 +358,10 @@ namespace SWP.Core.Services
                 throw new NotFoundException("Không tìm thấy part.");
             }
 
-            // Kiểm tra số lượng tồn kho
-            if (part.PartStock < request.Quantity)
-            {
-                throw new ValidateException($"Số lượng tồn kho không đủ. Tồn kho hiện tại: {part.PartStock}");
-            }
+            // Kiểm tra inventory tồn tại và số lượng (chỉ validate, không trừ)
+            await ValidateInventoryQuantityAsync(request.PartId, request.Quantity);
 
-            // Tạo service ticket detail
+            // Tạo service ticket detail (chưa trừ inventory, sẽ trừ khi confirm)
             var detail = new ServiceTicketDetail
             {
                 ServiceTicketId = id,
@@ -434,6 +431,12 @@ namespace SWP.Core.Services
                 throw new ValidateException("Không thể xóa khi service ticket đã hoàn thành.");
             }
 
+            // Nếu là part và service ticket đã completed (đã trừ inventory), rollback inventory
+            if (detail.PartId.HasValue && detail.Quantity.HasValue && serviceTicket.ServiceTicketStatus == ServiceTicketStatus.Completed)
+            {
+                await RollbackInventoryQuantityAsync(detail.PartId.Value, detail.Quantity.Value);
+            }
+
             return await _serviceTicketDetailRepo.DeleteAsync(serviceTicketDetailId);
         }
 
@@ -470,15 +473,23 @@ namespace SWP.Core.Services
                     throw new NotFoundException($"Không tìm thấy part với ID: {partDto.PartId}");
                 }
 
-                // Kiểm tra số lượng tồn kho
-                if (part.PartStock < partDto.Quantity)
-                {
-                    throw new ValidateException($"Số lượng tồn kho không đủ cho part {part.PartName}. Tồn kho hiện tại: {part.PartStock}");
-                }
-
                 if (partDto.ServiceTicketDetailId.HasValue)
                 {
-                    // Update existing
+                    // Update existing - rollback số cũ trước
+                    var oldDetail = await _serviceTicketDetailRepo.GetById(partDto.ServiceTicketDetailId.Value);
+                    if (oldDetail != null && oldDetail.PartId.HasValue && oldDetail.Quantity.HasValue)
+                    {
+                        // Rollback số lượng cũ (nếu service ticket đã completed)
+                        if (serviceTicket.ServiceTicketStatus == ServiceTicketStatus.Completed)
+                        {
+                            await RollbackInventoryQuantityAsync(oldDetail.PartId.Value, oldDetail.Quantity.Value);
+                        }
+                    }
+
+                    // Validate số lượng mới
+                    await ValidateInventoryQuantityAsync(partDto.PartId, partDto.Quantity);
+
+                    // Update detail
                     var detail = await _serviceTicketDetailRepo.GetById(partDto.ServiceTicketDetailId.Value);
                     if (detail != null)
                     {
@@ -489,7 +500,9 @@ namespace SWP.Core.Services
                 }
                 else
                 {
-                    // Insert new
+                    // Insert new - chỉ validate, chưa trừ
+                    await ValidateInventoryQuantityAsync(partDto.PartId, partDto.Quantity);
+
                     var detail = new ServiceTicketDetail
                     {
                         ServiceTicketId = serviceTicket.ServiceTicketId,
@@ -623,8 +636,29 @@ namespace SWP.Core.Services
             // Thêm parts
             foreach (var partDto in request.Parts)
             {
+                // Validate part tồn tại
+                var part = await _partRepo.GetById(partDto.PartId);
+                if (part == null)
+                {
+                    throw new NotFoundException($"Không tìm thấy part với ID: {partDto.PartId}");
+                }
+
                 if (partDto.ServiceTicketDetailId.HasValue)
                 {
+                    // Update existing - rollback số cũ nếu đã completed
+                    var oldDetail = await _serviceTicketDetailRepo.GetById(partDto.ServiceTicketDetailId.Value);
+                    if (oldDetail != null && oldDetail.PartId.HasValue && oldDetail.Quantity.HasValue)
+                    {
+                        // Kiểm tra service ticket status để rollback nếu cần
+                        if (serviceTicket.ServiceTicketStatus == ServiceTicketStatus.Completed)
+                        {
+                            await RollbackInventoryQuantityAsync(oldDetail.PartId.Value, oldDetail.Quantity.Value);
+                        }
+                    }
+
+                    // Validate số lượng mới
+                    await ValidateInventoryQuantityAsync(partDto.PartId, partDto.Quantity);
+
                     var detail = await _serviceTicketDetailRepo.GetById(partDto.ServiceTicketDetailId.Value);
                     if (detail != null)
                     {
@@ -635,6 +669,9 @@ namespace SWP.Core.Services
                 }
                 else
                 {
+                    // Insert new - chỉ validate
+                    await ValidateInventoryQuantityAsync(partDto.PartId, partDto.Quantity);
+
                     var detail = new ServiceTicketDetail
                     {
                         ServiceTicketId = serviceTicket.ServiceTicketId,
@@ -742,6 +779,29 @@ namespace SWP.Core.Services
             technicalTask.ConfirmedAt = DateTime.UtcNow;
             await _technicalTaskRepo.UpdateAsync(technicalTaskId, technicalTask);
 
+            // Trừ inventory cho tất cả parts trong service ticket này
+            var serviceTicket = await _serviceTicketRepo.GetById(technicalTask.ServiceTicketId);
+            if (serviceTicket != null)
+            {
+                // Lấy tất cả parts trong service ticket
+                var allDetails = await _serviceTicketDetailRepo.GetAllAsync();
+                var serviceTicketDetails = allDetails
+                    .Where(d => d.ServiceTicketId == serviceTicket.ServiceTicketId 
+                             && d.PartId.HasValue 
+                             && d.Quantity.HasValue
+                             && d.IsDeleted == 0)
+                    .ToList();
+
+                // Trừ inventory cho mỗi part
+                foreach (var detail in serviceTicketDetails)
+                {
+                    if (detail.PartId.HasValue && detail.Quantity.HasValue)
+                    {
+                        await DeductInventoryQuantityAsync(detail.PartId.Value, detail.Quantity.Value);
+                    }
+                }
+            }
+
             // Kiểm tra xem tất cả tasks của service ticket đã hoàn thành chưa
             var allTasks = await _technicalTaskRepo.GetAllAsync();
             var serviceTicketTasks = allTasks
@@ -751,7 +811,6 @@ namespace SWP.Core.Services
             // Nếu tất cả tasks đã hoàn thành, cập nhật status service ticket
             if (serviceTicketTasks.All(t => t.TaskStatus == 2))
             {
-                var serviceTicket = await _serviceTicketRepo.GetById(technicalTask.ServiceTicketId);
                 if (serviceTicket != null)
                 {
                     serviceTicket.ServiceTicketStatus = ServiceTicketStatus.Completed;
@@ -761,6 +820,62 @@ namespace SWP.Core.Services
             }
 
             return 1;
+        }
+
+        #endregion
+
+        #region Inventory Helpers
+
+        /// <summary>
+        /// Validate số lượng inventory có đủ không (không trừ)
+        /// </summary>
+        private async Task ValidateInventoryQuantityAsync(int partId, int quantity)
+        {
+            var inventory = await _inventoryRepo.GetById(partId);
+            if (inventory == null)
+            {
+                throw new NotFoundException($"Không tìm thấy inventory cho part với ID: {partId}");
+            }
+
+            if (inventory.InventoryQuantity < quantity)
+            {
+                throw new ValidateException($"Số lượng tồn kho không đủ. Tồn kho hiện tại: {inventory.InventoryQuantity}");
+            }
+        }
+
+        /// <summary>
+        /// Trừ số lượng trong inventory
+        /// </summary>
+        private async Task DeductInventoryQuantityAsync(int partId, int quantity)
+        {
+            var inventory = await _inventoryRepo.GetById(partId);
+            if (inventory == null)
+            {
+                throw new NotFoundException($"Không tìm thấy inventory cho part với ID: {partId}");
+            }
+
+            if (inventory.InventoryQuantity < quantity)
+            {
+                throw new ValidateException($"Số lượng tồn kho không đủ để trừ. Tồn kho hiện tại: {inventory.InventoryQuantity}, cần trừ: {quantity}");
+            }
+
+            inventory.InventoryQuantity -= quantity;
+            await _inventoryRepo.UpdateAsync(partId, inventory);
+        }
+
+        /// <summary>
+        /// Rollback (hoàn trả) số lượng trong inventory
+        /// </summary>
+        private async Task RollbackInventoryQuantityAsync(int partId, int quantity)
+        {
+            var inventory = await _inventoryRepo.GetById(partId);
+            if (inventory == null)
+            {
+                throw new NotFoundException($"Không tìm thấy inventory cho part với ID: {partId}");
+            }
+
+            inventory.InventoryQuantity += quantity;
+            await _inventoryRepo.UpdateAsync(partId, inventory);
         }
 
         #endregion
