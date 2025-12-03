@@ -108,56 +108,68 @@ namespace SWP.Api.Controllers
         }
 
         /// <summary>
-        /// Thêm part vào Service Ticket (Staff có thể thêm)
+        /// Chuyển status sang PendingTechnicalConfirmation (0)
         /// </summary>
         /// <param name="id">ID của Service Ticket</param>
-        /// <param name="request">Thông tin part</param>
-        /// <returns>ID của Service Ticket Detail vừa tạo</returns>
-        [HttpPost("{id}/parts")]
-        public async Task<IActionResult> AddPart(int id, [FromBody] ServiceTicketAddPartDto request)
-        {
-            var detailId = await _serviceTicketService.AddPartAsync(id, request);
-            return Ok(ApiResponse<object>.SuccessResponse(new { serviceTicketDetailId = detailId }, "Thêm part vào service ticket thành công"));
-        }
-
-        /// <summary>
-        /// Thêm garage service vào Service Ticket (Staff có thể thêm)
-        /// </summary>
-        /// <param name="id">ID của Service Ticket</param>
-        /// <param name="request">Thông tin garage service</param>
-        /// <returns>ID của Service Ticket Detail vừa tạo</returns>
-        [HttpPost("{id}/garage-services")]
-        public async Task<IActionResult> AddGarageService(int id, [FromBody] ServiceTicketAddGarageServiceDto request)
-        {
-            var detailId = await _serviceTicketService.AddGarageServiceAsync(id, request);
-            return Ok(ApiResponse<object>.SuccessResponse(new { serviceTicketDetailId = detailId }, "Thêm garage service vào service ticket thành công"));
-        }
-
-        /// <summary>
-        /// Xóa part/garage service khỏi Service Ticket
-        /// </summary>
-        /// <param name="id">ID của Service Ticket</param>
-        /// <param name="detailId">ID của Service Ticket Detail</param>
+        /// <param name="request">Thông tin thay đổi</param>
         /// <returns>Số dòng bị ảnh hưởng</returns>
-        [HttpDelete("{id}/details/{detailId}")]
-        public async Task<IActionResult> RemoveDetail(int id, int detailId)
+        [HttpPut("{id}/status/pending")]
+        public async Task<IActionResult> ChangeToPendingTechnicalConfirmation(int id, [FromBody] ServiceTicketChangeStatusDto request)
         {
-            var result = await _serviceTicketService.RemoveDetailAsync(id, detailId);
-            return Ok(ApiResponse<object>.SuccessResponse(new { affectedRows = result }, "Xóa detail khỏi service ticket thành công"));
+            var result = await _serviceTicketService.ChangeToPendingTechnicalConfirmationAsync(id, request);
+            return Ok(ApiResponse<object>.SuccessResponse(new { affectedRows = result }, "Chuyển trạng thái thành công"));
         }
 
         /// <summary>
-        /// Duyệt parts và services do Mechanic đề xuất (Staff)
+        /// Chuyển status sang AdjustedByTechnical (1)
         /// </summary>
-        /// <param name="technicalTaskId">ID của TechnicalTask</param>
-        /// <param name="request">Danh sách parts và services được duyệt</param>
-        /// <param name="staffId">ID của staff duyệt</param>
+        /// <param name="id">ID của Service Ticket</param>
+        /// <param name="request">Thông tin thay đổi</param>
         /// <returns>Số dòng bị ảnh hưởng</returns>
-        [HttpPost("technical-tasks/{technicalTaskId}/approve")]
-        public async Task<IActionResult> ApproveMechanicProposal(int technicalTaskId, [FromBody] ServiceTicketUpdatePartsServicesDto request, [FromQuery] int staffId)
+        [HttpPut("{id}/status/adjusted")]
+        public async Task<IActionResult> ChangeToAdjustedByTechnical(int id, [FromBody] ServiceTicketChangeStatusDto request)
         {
-            var result = await _serviceTicketService.ApproveMechanicProposalAsync(technicalTaskId, request, staffId);
-            return Ok(ApiResponse<object>.SuccessResponse(new { affectedRows = result }, "Duyệt đề xuất của mechanic thành công"));
+            var result = await _serviceTicketService.ChangeToAdjustedByTechnicalAsync(id, request);
+            return Ok(ApiResponse<object>.SuccessResponse(new { affectedRows = result }, "Chuyển trạng thái thành công"));
+        }
+
+        /// <summary>
+        /// Chuyển status sang InProgress (2)
+        /// </summary>
+        /// <param name="id">ID của Service Ticket</param>
+        /// <param name="request">Thông tin thay đổi</param>
+        /// <returns>Số dòng bị ảnh hưởng</returns>
+        [HttpPut("{id}/status/in-progress")]
+        public async Task<IActionResult> ChangeToInProgress(int id, [FromBody] ServiceTicketChangeStatusDto request)
+        {
+            var result = await _serviceTicketService.ChangeToInProgressAsync(id, request);
+            return Ok(ApiResponse<object>.SuccessResponse(new { affectedRows = result }, "Chuyển trạng thái thành công"));
+        }
+
+        /// <summary>
+        /// Chuyển status sang Completed (3)
+        /// </summary>
+        /// <param name="id">ID của Service Ticket</param>
+        /// <param name="request">Thông tin thay đổi</param>
+        /// <returns>Số dòng bị ảnh hưởng</returns>
+        [HttpPut("{id}/status/completed")]
+        public async Task<IActionResult> ChangeToCompleted(int id, [FromBody] ServiceTicketChangeStatusDto request)
+        {
+            var result = await _serviceTicketService.ChangeToCompletedAsync(id, request);
+            return Ok(ApiResponse<object>.SuccessResponse(new { affectedRows = result }, "Chuyển trạng thái thành công"));
+        }
+
+        /// <summary>
+        /// Chuyển status sang Cancelled (4)
+        /// </summary>
+        /// <param name="id">ID của Service Ticket</param>
+        /// <param name="request">Thông tin thay đổi</param>
+        /// <returns>Số dòng bị ảnh hưởng</returns>
+        [HttpPut("{id}/status/cancelled")]
+        public async Task<IActionResult> ChangeToCancelled(int id, [FromBody] ServiceTicketChangeStatusDto request)
+        {
+            var result = await _serviceTicketService.ChangeToCancelledAsync(id, request);
+            return Ok(ApiResponse<object>.SuccessResponse(new { affectedRows = result }, "Chuyển trạng thái thành công"));
         }
 
         #endregion

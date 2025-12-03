@@ -90,6 +90,19 @@ namespace SWP.Api.Controllers
             var result = await _garageServiceService.DeleteAsync(id);
             return Ok(ApiResponse<object>.SuccessResponse(new { affectedRows = result }, "Xóa garage service thành công"));
         }
+
+        /// <summary>
+        /// Tìm kiếm Garage Service cho select (với search keyword)
+        /// </summary>
+        /// <param name="request">Request tìm kiếm</param>
+        /// <returns>Danh sách Garage Service</returns>
+        [HttpPost("search")]
+        public async Task<IActionResult> SearchForSelect([FromBody] GarageServiceSearchRequest request)
+        {
+            var result = await _garageServiceService.SearchForSelectAsync(request);
+            return Ok(ApiResponse<List<GarageServiceSelectDto>>.SuccessResponse(result, "Tìm kiếm garage service thành công"));
+        }
     }
 }
+
 

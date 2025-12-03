@@ -10,6 +10,7 @@ namespace SWP.Core.Services
     /// <summary>
     /// Service cho Garage Service
     /// Created by: DuyLC(02/12/2025)
+    /// Updated by: DuyLC(03/12/2025)
     /// </summary>
     public class GarageServiceService : IGarageServiceService
     {
@@ -105,6 +106,14 @@ namespace SWP.Core.Services
             return await _garageServiceRepo.DeleteAsync(id);
         }
 
+        /// <summary>
+        /// Tìm kiếm Garage Service cho select (với search keyword)
+        /// </summary>
+        public Task<List<GarageServiceSelectDto>> SearchForSelectAsync(GarageServiceSearchRequest request)
+        {
+            return _garageServiceRepo.SearchForSelectAsync(request);
+        }
+
         #region Helpers
 
         /// <summary>
@@ -152,4 +161,5 @@ namespace SWP.Core.Services
         #endregion
     }
 }
+
 

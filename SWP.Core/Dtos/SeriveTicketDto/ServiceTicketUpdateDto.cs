@@ -38,9 +38,14 @@ namespace SWP.Core.Dtos.SeriveTicketDto
         public string? ServiceTicketCode { get; set; }
 
         /// <summary>
-        /// Trạng thái
+        /// Danh sách Parts mới (nullable - nếu có thì thay thế toàn bộ)
         /// </summary>
-        public byte? ServiceTicketStatus { get; set; }
+        public List<ServiceTicketAddPartDto>? Parts { get; set; }
+
+        /// <summary>
+        /// Danh sách Garage Service IDs mới (nullable - nếu có thì thay thế toàn bộ)
+        /// </summary>
+        public List<int>? GarageServiceIds { get; set; }
     }
 }
 

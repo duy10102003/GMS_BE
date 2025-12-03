@@ -60,6 +60,16 @@ namespace SWP.Core.Dtos.SeriveTicketDto
         /// </summary>
         [MaxLength(255, ErrorMessage = "Mô tả không được vượt quá 255 ký tự.")]
         public string? AssignDescription { get; set; }
+
+        /// <summary>
+        /// Danh sách Parts (nullable)
+        /// </summary>
+        public List<ServiceTicketAddPartDto>? Parts { get; set; }
+
+        /// <summary>
+        /// Danh sách Garage Services (nullable) - Không có quantity
+        /// </summary>
+        public List<int>? GarageServiceIds { get; set; }
     }
 }
 

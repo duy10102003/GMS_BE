@@ -76,11 +76,23 @@ namespace SWP.Core.Services
         /// </summary>
         public async Task<int> UpdateAsync(int id, PartCategoryUpdateDto request)
         {
-            var existing = await _partCategoryRepo.GetById(id);
-            if (existing == null)
+            // Dùng GetDetailAsync thay vì GetById vì PartCategory không có is_deleted
+            var existingDetail = await _partCategoryRepo.GetDetailAsync(id);
+            if (existingDetail == null)
             {
                 throw new NotFoundException("Không tìm thấy part category cần cập nhật.");
             }
+
+            // Tạo entity từ DTO để update
+            var existing = new PartCategory
+            {
+                PartCategoryId = id,
+                PartCategoryName = request.PartCategoryName?.Trim(),
+                PartCategoryCode = request.PartCategoryCode.Trim(),
+                PartCategoryDiscription = request.PartCategoryDiscription?.Trim(),
+                PartCategoryPhone = request.PartCategoryPhone?.Trim(),
+                Status = request.Status?.Trim()
+            };
 
             // Validate
             ValidateUpdatePayload(request);
@@ -99,11 +111,12 @@ namespace SWP.Core.Services
         }
 
         /// <summary>
-        /// Xóa Part Category
+        /// Xóa Part Category (Hard Delete vì không có is_deleted)
         /// </summary>
         public async Task<int> DeleteAsync(int id)
         {
-            var existing = await _partCategoryRepo.GetById(id);
+            // Dùng GetDetailAsync thay vì GetById vì PartCategory không có is_deleted
+            var existing = await _partCategoryRepo.GetDetailAsync(id);
             if (existing == null)
             {
                 throw new NotFoundException("Không tìm thấy part category.");
@@ -112,7 +125,8 @@ namespace SWP.Core.Services
             // Kiểm tra xem part category có đang được sử dụng trong part không
             // Note: Có thể thêm validation sau nếu cần
 
-            return await _partCategoryRepo.DeleteAsync(id);
+            // Hard delete vì PartCategory không có is_deleted
+            return await _partCategoryRepo.DeleteHardAsync(id);
         }
 
         /// <summary>
@@ -220,4 +234,5 @@ namespace SWP.Core.Services
         #endregion
     }
 }
+
 
