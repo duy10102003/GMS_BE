@@ -34,8 +34,7 @@ namespace SWP.Infrastructure.Repositories
             var joinClauses = new List<string>();
 
             // Base query - sử dụng subquery để lấy technical staff được assign
-            var baseSelect = @"
-                SELECT DISTINCT
+            var baseSelect = @"SELECT DISTINCT
                     st.service_ticket_id AS ServiceTicketId,
                     st.service_ticket_code AS ServiceTicketCode,
                     st.booking_id AS BookingId,
@@ -175,11 +174,9 @@ namespace SWP.Infrastructure.Repositories
             parameters.Add("@Offset", offset);
             parameters.Add("@PageSize", filter.PageSize);
 
-            var dataSql = $@"
-                {baseSelect}
-                {whereClause}
-                {orderBy}
-                LIMIT @PageSize OFFSET @Offset";
+            var dataSql = string.IsNullOrWhiteSpace(whereClause)
+                ? $"{baseSelect} {orderBy} LIMIT @PageSize OFFSET @Offset"
+                : $"{baseSelect} {whereClause} {orderBy} LIMIT @PageSize OFFSET @Offset";
 
             using var connection = new MySqlConnection(_connection);
             
@@ -445,8 +442,7 @@ namespace SWP.Infrastructure.Repositories
             var whereConditions = new List<string>();
 
             // Base query
-            var baseSelect = @"
-                SELECT DISTINCT
+            var baseSelect = @"SELECT DISTINCT
                     tt.technical_task_id AS TechnicalTaskId,
                     tt.service_ticket_id AS ServiceTicketId,
                     st.service_ticket_code AS ServiceTicketCode,
@@ -566,11 +562,9 @@ namespace SWP.Infrastructure.Repositories
             parameters.Add("@Offset", offset);
             parameters.Add("@PageSize", filter.PageSize);
 
-            var dataSql = $@"
-                {baseSelect}
-                {whereClause}
-                {orderBy}
-                LIMIT @PageSize OFFSET @Offset";
+            var dataSql = string.IsNullOrWhiteSpace(whereClause)
+                ? $"{baseSelect} {orderBy} LIMIT @PageSize OFFSET @Offset"
+                : $"{baseSelect} {whereClause} {orderBy} LIMIT @PageSize OFFSET @Offset";
 
             using var connection = new MySqlConnection(_connection);
             
