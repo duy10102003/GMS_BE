@@ -21,25 +21,30 @@ namespace SWP.Core.Entities
         [MaxLength(20)]
         public string PartCode { get; set; } = string.Empty;
 
-        [Column("part_stock")]
+        [Column("part_quantity")]
         [Required]
-        public int PartStock { get; set; }
+        public int PartQuantity { get; set; }
 
         [Column("part_unit")]
         [Required]
         [MaxLength(20)]
         public string PartUnit { get; set; } = string.Empty;
 
-        [Column("supplier_id")]
+        [Column("part_category_id")]
         [Required]
-        public int SupplierId { get; set; }
+        public int PartCategoryId { get; set; }
+
+        [Column("part_price", TypeName = "decimal(24,2)")]
+        public decimal? PartPrice { get; set; }
+
+        [Column("warranty_month")]
+        public int? WarrantyMonth { get; set; }
 
         [Column("is_deleted")]
         public int IsDeleted { get; set; } = 0;
 
         // Navigation properties
-        public Supplier Supplier { get; set; } = null!;
-        public Inventory? Inventory { get; set; }
+        public PartCategory PartCategory { get; set; } = null!;
         public ICollection<ServiceTicketDetail> ServiceTicketDetails { get; set; } = new List<ServiceTicketDetail>();
         public ICollection<PartStockInItem> PartStockInItems { get; set; } = new List<PartStockInItem>();
         public ICollection<PartStockOutItem> PartStockOutItems { get; set; } = new List<PartStockOutItem>();
