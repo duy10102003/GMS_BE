@@ -49,8 +49,13 @@ namespace SWP.Infrastructure.Repositories
                         continue;
                     }
 
-                    var paramName = $"@FilterValue{filterIndex}";
                     var columnName = GetColumnNameForFilter(columnFilter.ColumnName);
+                    if (string.IsNullOrEmpty(columnName))
+                    {
+                        continue; // skip unknown columns
+                    }
+
+                    var paramName = $"@FilterValue{filterIndex}";
 
                     switch (columnFilter.Operator.ToLower())
                     {
@@ -119,9 +124,14 @@ namespace SWP.Infrastructure.Repositories
                     .Select(s =>
                     {
                         var columnName = GetColumnNameForSort(s.ColumnName);
+                        if (string.IsNullOrEmpty(columnName))
+                        {
+                            return null;
+                        }
                         var direction = s.SortDirection.ToUpper() == "ASC" ? "ASC" : "DESC";
                         return $"{columnName} {direction}";
                     })
+                    .Where(x => x != null)
                     .ToList();
 
                 if (sortParts.Any())
@@ -208,7 +218,8 @@ namespace SWP.Infrastructure.Repositories
                 return mapped;
             }
 
-            return $"b.{columnName.ToLower()}";
+            // unknown column -> ignore
+            return string.Empty;
         }
 
         private string GetColumnNameForSort(string columnName)
@@ -229,7 +240,8 @@ namespace SWP.Infrastructure.Repositories
                 return mapped;
             }
 
-            return $"b.{columnName.ToLower()}";
+            // unknown column -> ignore
+            return string.Empty;
         }
     }
 }
