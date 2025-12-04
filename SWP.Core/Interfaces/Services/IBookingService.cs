@@ -7,7 +7,6 @@ namespace SWP.Core.Interfaces.Services
     {
         Task<PagedResult<BookingListItemDto>> GetPagingAsync(BookingFilterDtoRequest filter);
         Task<BookingDetailDto> GetByIdAsync(int id);
-        Task<int> CreateAsync(BookingCreateDto request);
         Task<int> CreateForGuestAsync(BookingCreateGuestDto request);
         Task<int> CreateForUserAsync(BookingCreateForUserDto request);
         Task<int> UpdateAsync(int id, BookingCreateDto request);

@@ -36,17 +36,6 @@ namespace SWP.Core.Services
             return result;
         }
 
-        public async Task<int> CreateAsync(BookingCreateDto request)
-        {
-            await EnsureCustomerExists(request.CustomerId);
-
-            return await CreateBookingInternal(
-                request.CustomerId,
-                request.BookingTime,
-                request.VehicleName,
-                request.Note);
-        }
-
         public async Task<int> CreateForGuestAsync(BookingCreateGuestDto request)
         {
             if (string.IsNullOrWhiteSpace(request.CustomerPhone))
