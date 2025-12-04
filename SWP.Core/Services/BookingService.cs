@@ -36,27 +36,45 @@ namespace SWP.Core.Services
             return result;
         }
 
+        public async Task<int> CreateAsync(BookingCreateDto request)
+        {
+            await EnsureCustomerExists(request.CustomerId);
+
+            return await CreateBookingInternal(
+                request.CustomerId,
+                request.BookingTime,
+                request.VehicleName,
+                request.Note);
+        }
+
         public async Task<int> CreateForGuestAsync(BookingCreateGuestDto request)
         {
-            if (string.IsNullOrWhiteSpace(request.CustomerPhone))
-            {
-                throw new ValidateException("Customer phone is required.");
-            }
+            ValidateGuestRequest(request);
 
-            var customer = new Customer
-            {
-                CustomerName = request.CustomerName?.Trim(),
-                CustomerPhone = request.CustomerPhone.Trim(),
-                CustomerEmail = request.CustomerEmail?.Trim(),
-                IsDeleted = 0
-            };
+            var normalizedName = request.CustomerName?.Trim() ?? string.Empty;
+            var normalizedPhone = request.CustomerPhone.Trim();
+            var normalizedEmail = request.CustomerEmail?.Trim();
+            var normalizedVehicleName = request.VehicleName?.Trim();
 
-            var customerId = Convert.ToInt32(await _customerRepo.InsertAsync(customer));
+            // Nếu đã có đủ 3 trường khớp thì tái sử dụng, nếu lệch bất kỳ thì tạo mới
+            var existingCustomer = await _customerRepo.FindByIdentityAsync(
+                normalizedName,
+                normalizedPhone,
+                normalizedEmail);
+
+            var customerId = existingCustomer?.CustomerId
+                ?? Convert.ToInt32(await _customerRepo.InsertAsync(new Customer
+                {
+                    CustomerName = normalizedName,
+                    CustomerPhone = normalizedPhone,
+                    CustomerEmail = normalizedEmail,
+                    IsDeleted = 0
+                }));
 
             return await CreateBookingInternal(
                 customerId,
                 request.BookingTime,
-                request.VehicleName,
+                normalizedVehicleName,
                 request.Note);
         }
 
@@ -67,6 +85,8 @@ namespace SWP.Core.Services
             {
                 throw new NotFoundException("Khong tim thay user.");
             }
+
+            ValidateUserBookingRequest(request, user);
 
             var customer = await _customerRepo.GetByUserIdAsync(request.UserId);
             if (customer == null)
@@ -92,7 +112,7 @@ namespace SWP.Core.Services
             return await CreateBookingInternal(
                 customer.CustomerId,
                 request.BookingTime,
-                request.VehicleName,
+                request.VehicleName?.Trim(),
                 request.Note);
         }
 
@@ -148,6 +168,74 @@ namespace SWP.Core.Services
             };
 
             return Convert.ToInt32(await _bookingRepo.InsertAsync(entity));
+        }
+
+        private static void ValidateGuestRequest(BookingCreateGuestDto request)
+        {
+            if (string.IsNullOrWhiteSpace(request.CustomerName))
+            {
+                throw new ValidateException("Customer name is required.");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.CustomerPhone))
+            {
+                throw new ValidateException("Customer phone is required.");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.CustomerEmail))
+            {
+                throw new ValidateException("Customer email is required.");
+            }
+            if (!IsValidEmail(request.CustomerEmail))
+            {
+                throw new ValidateException("Customer email is not valid.");
+            }
+
+            if (request.BookingTime == default)
+            {
+                throw new ValidateException("Booking time is required.");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.VehicleName))
+            {
+                throw new ValidateException("Vehicle name is required.");
+            }
+        }
+
+        private static void ValidateUserBookingRequest(BookingCreateForUserDto request, User user)
+        {
+            if (request.BookingTime == default)
+            {
+                throw new ValidateException("Booking time is required.");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.VehicleName))
+            {
+                throw new ValidateException("Vehicle name is required.");
+            }
+
+            if (string.IsNullOrWhiteSpace(user.FullName))
+            {
+                throw new ValidateException("User full name is required to create booking.");
+            }
+
+            if (string.IsNullOrWhiteSpace(user.Phone))
+            {
+                throw new ValidateException("User phone is required to create booking.");
+            }
+        }
+
+        private static bool IsValidEmail(string email)
+        {
+            try
+            {
+                var addr = new System.Net.Mail.MailAddress(email);
+                return addr.Address.Equals(email, StringComparison.OrdinalIgnoreCase);
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 }

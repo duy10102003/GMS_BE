@@ -22,5 +22,14 @@ namespace SWP.Core.Interfaces.Repositories
         /// <param name="userId">Id của user</param>
         /// <returns>Customer nếu tồn tại</returns>
         Task<Customer?> GetByUserIdAsync(int userId);
+
+        /// <summary>
+        /// Tìm customer theo trọn bộ thông tin định danh (name/phone/email).
+        /// </summary>
+        /// <param name="customerName">Tên khách</param>
+        /// <param name="customerPhone">Số điện thoại</param>
+        /// <param name="customerEmail">Email</param>
+        /// <returns>Customer nếu trùng khớp, null nếu không</returns>
+        Task<Customer?> FindByIdentityAsync(string customerName, string customerPhone, string? customerEmail);
     }
 }
