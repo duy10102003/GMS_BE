@@ -151,6 +151,14 @@ namespace SWP.Core.Services
             return _partRepo.SearchForSelectAsync(searchKeyword, limit);
         }
 
+        /// <summary>
+        /// Tìm kiếm Part cho select (với DTO request)
+        /// </summary>
+        public Task<List<PartSelectDto>> SearchForSelectAsync(PartSearchRequest request)
+        {
+            return _partRepo.SearchForSelectAsync(request.SearchKeyword, request.Limit);
+        }
+
         #region Helpers
 
         /// <summary>

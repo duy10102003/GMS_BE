@@ -26,10 +26,21 @@ namespace SWP.Api.Controllers
         /// <param name="roleName">Tên role (ví dụ: "TechnicalStaff", "Mechanic")</param>
         /// <returns>Danh sách Technical Staff</returns>
         [HttpGet("technical-staff")]
-        public async Task<IActionResult> GetTechnicalStaff([FromQuery] string roleName = "TechnicalStaff")
+        public async Task<IActionResult> GetTechnicalStaff([FromQuery] string roleName = "MECHANIC")
         {
             var result = await _userService.GetTechnicalStaffWithAvailabilityAsync(roleName);
             return Ok(ApiResponse<List<TechnicalStaffSelectDto>>.SuccessResponse(result, "Lấy danh sách technical staff thành công"));
+        }
+
+        /// <summary>
+        /// Lấy danh sách Mechanic (role MECHANIC) để phân công
+        /// </summary>
+        /// <returns>Danh sách Mechanic</returns>
+        [HttpGet("mechanics")]
+        public async Task<IActionResult> GetMechanics()
+        {
+            var result = await _userService.GetTechnicalStaffWithAvailabilityAsync("MECHANIC");
+            return Ok(ApiResponse<List<TechnicalStaffSelectDto>>.SuccessResponse(result, "Lấy danh sách mechanic thành công"));
         }
     }
 }

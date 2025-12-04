@@ -32,6 +32,18 @@ namespace SWP.Api.Controllers
         }
 
         /// <summary>
+        /// Tìm kiếm Part cho select (với search keyword)
+        /// </summary>
+        /// <param name="request">Request tìm kiếm</param>
+        /// <returns>Danh sách Part</returns>
+        [HttpPost("search")]
+        public async Task<IActionResult> SearchForSelect([FromBody] PartSearchRequest request)
+        {
+            var result = await _partService.SearchForSelectAsync(request);
+            return Ok(ApiResponse<List<PartSelectDto>>.SuccessResponse(result, "Tìm kiếm part thành công"));
+        }
+
+        /// <summary>
         /// Lấy danh sách Part có phân trang
         /// </summary>
         /// <param name="filter">Filter và phân trang</param>
