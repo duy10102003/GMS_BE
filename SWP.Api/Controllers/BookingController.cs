@@ -55,6 +55,28 @@ namespace SWP.Api.Controllers
             return CreatedAtAction(nameof(GetById), new { id }, response);
         }
 
+        [HttpPost("guest")]
+        public async Task<IActionResult> CreateForGuest([FromBody] BookingCreateGuestDto request)
+        {
+            var id = await _bookingService.CreateForGuestAsync(request);
+            var response = ApiResponse<object>.SuccessResponse(
+                new { bookingId = id },
+                "Tạo booking cho guest thành công"
+            );
+            return CreatedAtAction(nameof(GetById), new { id }, response);
+        }
+
+        [HttpPost("user")]
+        public async Task<IActionResult> CreateForUser([FromBody] BookingCreateForUserDto request)
+        {
+            var id = await _bookingService.CreateForUserAsync(request);
+            var response = ApiResponse<object>.SuccessResponse(
+                new { bookingId = id },
+                "Tạo booking cho user thành công"
+            );
+            return CreatedAtAction(nameof(GetById), new { id }, response);
+        }
+
         [HttpPut("{id:int}")]
         public async Task<IActionResult> Update(int id, [FromBody] BookingCreateDto request)
         {

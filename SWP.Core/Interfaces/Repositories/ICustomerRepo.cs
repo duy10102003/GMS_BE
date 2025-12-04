@@ -15,6 +15,12 @@ namespace SWP.Core.Interfaces.Repositories
         /// <param name="request">Request tìm kiếm</param>
         /// <returns>Danh sách Customer</returns>
         Task<List<CustomerSelectDto>> SearchForSelectAsync(CustomerSearchRequest request);
+
+        /// <summary>
+        /// Lấy thông tin customer theo userId.
+        /// </summary>
+        /// <param name="userId">Id của user</param>
+        /// <returns>Customer nếu tồn tại</returns>
+        Task<Customer?> GetByUserIdAsync(int userId);
     }
 }
-

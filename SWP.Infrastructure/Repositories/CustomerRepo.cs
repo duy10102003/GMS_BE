@@ -50,6 +50,27 @@ namespace SWP.Infrastructure.Repositories
             var result = await connection.QueryAsync<CustomerSelectDto>(sql, parameters);
             return result.ToList();
         }
+
+        /// <summary>
+        /// Lấy thông tin customer theo userId.
+        /// </summary>
+        public async Task<Customer?> GetByUserIdAsync(int userId)
+        {
+            var sql = @"
+                SELECT 
+                    c.customer_id AS CustomerId,
+                    c.customer_name AS CustomerName,
+                    c.customer_phone AS CustomerPhone,
+                    c.customer_email AS CustomerEmail,
+                    c.user_id AS UserId,
+                    c.is_deleted AS IsDeleted
+                FROM `customer` c
+                WHERE c.user_id = @UserId AND c.is_deleted = 0
+                LIMIT 1";
+
+            using var connection = new MySqlConnection(_connection);
+            return await connection.QueryFirstOrDefaultAsync<Customer>(sql, new { UserId = userId });
+        }
     }
 }
 
