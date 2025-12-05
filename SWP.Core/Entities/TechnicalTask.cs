@@ -38,7 +38,7 @@ namespace SWP.Core.Entities
         [Column("is_deleted")]
         public int IsDeleted { get; set; } = 0;
 
-        // Navigation properties
+        // 
         public ServiceTicket ServiceTicket { get; set; } = null!;
         public User? AssignedToTechnicalUser { get; set; }
         public User? ConfirmedByUser { get; set; }

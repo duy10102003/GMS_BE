@@ -63,17 +63,25 @@ namespace SWP.Infrastructure.Repositories
             }
 
             // Filter theo task status
-            if (filter.TaskStatus.HasValue)
+            if (filter.TaskStatus.HasValue && filter.TaskStatus.Value != 10)
             {
                 whereConditions.Add("tt.task_status = @TaskStatus");
                 parameters.Add("@TaskStatus", filter.TaskStatus.Value);
             }
+            if(filter.TaskStatus.HasValue && filter.TaskStatus.Value == 10)
+            {
+                whereConditions.Add("tt.task_status IN (0,1,2,3)");
+            }
 
             // Filter theo service ticket status (chỉ lấy chưa hoàn thành)
-            if (filter.ServiceTicketStatus.HasValue)
+            if (filter.ServiceTicketStatus.HasValue && filter.TaskStatus.Value != 10)
             {
                 whereConditions.Add("st.service_ticket_status = @ServiceTicketStatus");
                 parameters.Add("@ServiceTicketStatus", filter.ServiceTicketStatus.Value);
+            }
+            else if (filter.ServiceTicketStatus.HasValue && filter.ServiceTicketStatus.Value == 10)
+            {
+                whereConditions.Add("st.service_ticket_status IN (0,1,2,3,4,5)");
             }
             else
             {
@@ -96,7 +104,7 @@ namespace SWP.Infrastructure.Repositories
             // Sort
             var orderBy = "ORDER BY tt.technical_task_id DESC";
 
-            // Pagination
+            // Phan trang
             var offset = (filter.Page - 1) * filter.PageSize;
             parameters.Add("@Offset", offset);
             parameters.Add("@PageSize", filter.PageSize);
