@@ -29,7 +29,7 @@ namespace SWP.Core.Entities
         [Column("is_deleted")]
         public int IsDeleted { get; set; } = 0;
 
-        // Navigation properties
+        // 
         public ServiceTicketDetail ServiceTicketDetail { get; set; } = null!;
     }
 }

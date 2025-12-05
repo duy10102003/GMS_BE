@@ -29,6 +29,9 @@ namespace SWP.Core.Entities
         [Column("note")]
         public string? Note { get; set; }
 
+        [Column("issue_picture")]
+        public string? IssuePicture { get; set; }
+
         [Column("created_date")]
         public DateTime? CreatedDate { get; set; }
 
@@ -38,7 +41,7 @@ namespace SWP.Core.Entities
         [Column("is_deleted")]
         public int IsDeleted { get; set; } = 0;
 
-        // Navigation properties
+        // 
         public Customer Customer { get; set; } = null!;
         public ICollection<ServiceTicket> ServiceTickets { get; set; } = new List<ServiceTicket>();
     }

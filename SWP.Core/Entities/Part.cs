@@ -43,10 +43,9 @@ namespace SWP.Core.Entities
         [Column("is_deleted")]
         public int IsDeleted { get; set; } = 0;
 
-        // Navigation properties
+        //
         public PartCategory PartCategory { get; set; } = null!;
         public ICollection<ServiceTicketDetail> ServiceTicketDetails { get; set; } = new List<ServiceTicketDetail>();
-        public ICollection<PartStockInItem> PartStockInItems { get; set; } = new List<PartStockInItem>();
         public ICollection<PartStockOutItem> PartStockOutItems { get; set; } = new List<PartStockOutItem>();
         public ICollection<PartPriceHistory> PartPriceHistories { get; set; } = new List<PartPriceHistory>();
     }
