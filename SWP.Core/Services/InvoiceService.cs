@@ -1,3 +1,4 @@
+using SWP.Core.Constants.ServiceTicketStatus;
 using SWP.Core.Dtos;
 using SWP.Core.Dtos.InvoiceDto;
 using SWP.Core.Dtos.SeriveTicketDto;
@@ -121,7 +122,20 @@ namespace SWP.Core.Services
                 InvoiceStatus = 0, // Pending
                 InvoiceCode = request.InvoiceCode
             };
+       
+            // Chỉ cho phép chuyển từ Completed
+            if (serviceTicket.ServiceTicketStatus != ServiceTicketStatus.Completed)
+            {
+                throw new ValidateException("Chỉ có thể chuyển sang trạng thái này từ Completed.");
+            }
 
+            // tao bao hanh
+
+
+            serviceTicket.ServiceTicketStatus = ServiceTicketStatus.CompletedPayment;
+            serviceTicket.ModifiedDate = DateTime.UtcNow;
+
+            await _serviceTicketRepo.UpdateAsync(request.ServiceTicketId, serviceTicket);
             var idObj = await _invoiceBaseRepo.InsertAsync(invoice);
             return idObj is int id ? id : (int)idObj;
         }

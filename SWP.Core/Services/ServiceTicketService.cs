@@ -234,7 +234,7 @@ namespace SWP.Core.Services
                 {
                     // Validate part quantity
                     await ValidatePartQuantityAsync(partDto.PartId, partDto.Quantity);
-
+                    await DeductPartQuantityAsync(partDto.PartId, partDto.Quantity);
                     var detail = new ServiceTicketDetail
                     {
                         ServiceTicketId = serviceTicketId,
@@ -379,7 +379,7 @@ namespace SWP.Core.Services
                 foreach (var partDto in request.Parts)
                 {
                     await ValidatePartQuantityAsync(partDto.PartId, partDto.Quantity);
-
+                    await DeductPartQuantityAsync(partDto.PartId, partDto.Quantity);
                     var detail = new ServiceTicketDetail
                     {
                         ServiceTicketId = id,
@@ -502,6 +502,7 @@ namespace SWP.Core.Services
 
             // Kiểm tra số lượng part có đủ không (chỉ validate, không trừ)
             await ValidatePartQuantityAsync(request.PartId, request.Quantity);
+            await DeductPartQuantityAsync(request.PartId, request.Quantity);
 
             // Tạo service ticket detail (chưa trừ quantity, sẽ trừ khi confirm)
             var detail = new ServiceTicketDetail
@@ -630,7 +631,7 @@ namespace SWP.Core.Services
 
                     // Validate số lượng mới
                     await ValidatePartQuantityAsync(partDto.PartId, partDto.Quantity);
-
+                    await DeductPartQuantityAsync(partDto.PartId, partDto.Quantity);
                     // Update detail
                     var detail = await _serviceTicketDetailRepo.GetById(partDto.ServiceTicketDetailId.Value);
                     if (detail != null)
@@ -644,7 +645,7 @@ namespace SWP.Core.Services
                 {
                     // Insert new - chỉ validate, chưa trừ
                     await ValidatePartQuantityAsync(partDto.PartId, partDto.Quantity);
-
+                    await DeductPartQuantityAsync(partDto.PartId, partDto.Quantity);
                     var detail = new ServiceTicketDetail
                     {
                         ServiceTicketId = serviceTicket.ServiceTicketId,
@@ -694,6 +695,33 @@ namespace SWP.Core.Services
             serviceTicket.ModifiedDate = DateTime.UtcNow;
             return await _serviceTicketRepo.UpdateAsync(serviceTicket.ServiceTicketId, serviceTicket);
         }
+
+        /// <summary>
+        /// Chuyển status sang CompletedPayment (5)
+        /// </summary>
+        public async Task<int> ChangeToCompletedPaymentAsync(int id)
+        {
+            var serviceTicket = await _serviceTicketRepo.GetById(id);
+            if (serviceTicket == null)
+            {
+                throw new NotFoundException("Không tìm thấy service ticket.");
+            }
+
+            // Chỉ cho phép chuyển từ Completed
+            if (serviceTicket.ServiceTicketStatus != ServiceTicketStatus.Completed)
+            {
+                throw new ValidateException("Chỉ có thể chuyển sang trạng thái này từ Completed.");
+            }
+
+            // tao bao hanh
+
+
+            serviceTicket.ServiceTicketStatus = ServiceTicketStatus.CompletedPayment;
+            serviceTicket.ModifiedDate = DateTime.UtcNow;
+
+            return await _serviceTicketRepo.UpdateAsync(id, serviceTicket);
+        }
+
 
         #endregion
 
@@ -1059,7 +1087,7 @@ namespace SWP.Core.Services
             var details = await _serviceTicketRepo.GetServiceTicketDetailsAsync(id);
             foreach (var detail in details.Where(d => d.PartId.HasValue && d.Quantity.HasValue))
             {
-                await DeductPartQuantityAsync(detail.PartId!.Value, detail.Quantity!.Value);
+               // await DeductPartQuantityAsync(detail.PartId!.Value, detail.Quantity!.Value);
             }
 
             serviceTicket.ServiceTicketStatus = ServiceTicketStatus.Completed;
@@ -1068,6 +1096,8 @@ namespace SWP.Core.Services
 
             return await _serviceTicketRepo.UpdateAsync(id, serviceTicket);
         }
+
+
 
         /// <summary>
         /// Chuyển status sang Cancelled (4) - Tự động rollback part quantity
