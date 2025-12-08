@@ -212,6 +212,7 @@ namespace SWP.Infrastructure.Repositories
                     pc.part_category_name AS PartCategoryName,
                     pc.part_category_code AS PartCategoryCode
                 FROM `part_category` pc
+                WHERE pc.status = 'Active'
                 ORDER BY pc.part_category_name ASC";
 
             using var connection = new MySqlConnection(_connection);
