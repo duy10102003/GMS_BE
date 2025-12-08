@@ -15,6 +15,11 @@ namespace SWP.Core.Dtos.BookingDto
         public byte? Status { get; set; }
 
         public int? CustomerId { get; set; }
+
+        /// <summary>
+        /// Lọc theo email khách hàng (chính xác)
+        /// </summary>
+        public string? CustomerEmail { get; set; }
         
         public List<ColumnFilterDto>? ColumnFilters { get; set; }
 

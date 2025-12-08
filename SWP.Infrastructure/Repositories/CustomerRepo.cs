@@ -71,6 +71,39 @@ namespace SWP.Infrastructure.Repositories
             using var connection = new MySqlConnection(_connection);
             return await connection.QueryFirstOrDefaultAsync<Customer>(sql, new { UserId = userId });
         }
+
+        /// <summary>
+        /// Tìm customer theo trọn bộ thông tin định danh (name/phone/email).
+        /// Chỉ trả về nếu khớp toàn bộ; nếu một trường lệch coi như không tồn tại.
+        /// </summary>
+        public async Task<Customer?> FindByIdentityAsync(string customerName, string customerPhone, string? customerEmail)
+        {
+            var sql = @"
+                SELECT 
+                    c.customer_id AS CustomerId,
+                    c.customer_name AS CustomerName,
+                    c.customer_phone AS CustomerPhone,
+                    c.customer_email AS CustomerEmail,
+                    c.user_id AS UserId,
+                    c.is_deleted AS IsDeleted
+                FROM `customer` c
+                WHERE c.is_deleted = 0
+                  AND c.customer_name = @CustomerName
+                  AND c.customer_phone = @CustomerPhone
+                  AND (
+                        (@CustomerEmail IS NULL AND c.customer_email IS NULL)
+                     OR c.customer_email = @CustomerEmail
+                  )
+                LIMIT 1";
+
+            using var connection = new MySqlConnection(_connection);
+            return await connection.QueryFirstOrDefaultAsync<Customer>(sql, new
+            {
+                CustomerName = customerName,
+                CustomerPhone = customerPhone,
+                CustomerEmail = customerEmail
+            });
+        }
     }
 }
 

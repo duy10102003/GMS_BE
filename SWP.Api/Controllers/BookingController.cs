@@ -1,4 +1,5 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 using SWP.Core.Dtos;
 using SWP.Core.Dtos.BookingDto;
 using SWP.Core.Interfaces.Services;
@@ -42,17 +43,6 @@ namespace SWP.Api.Controllers
                 "Lấy chi tiết booking thành công"
             );
             return Ok(response);
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> Create([FromBody] BookingCreateDto request)
-        {
-            var id = await _bookingService.CreateAsync(request);
-            var response = ApiResponse<object>.SuccessResponse(
-                new { bookingId = id },
-                "Tạo booking thành công"
-            );
-            return CreatedAtAction(nameof(GetById), new { id }, response);
         }
 
         [HttpPost("guest")]
