@@ -376,7 +376,23 @@ namespace SWP.Infrastructure.Repositories
                 });
             }
 
-            var services = await connection.QueryAsync<ServiceTicketDetailServiceDto>(servicesSql, parameters);
+            // Map garage services thủ công vì có nested object
+            var servicesData = await connection.QueryAsync(servicesSql, parameters);
+            var services = new List<ServiceTicketDetailServiceDto>();
+            foreach (var row in servicesData)
+            {
+                services.Add(new ServiceTicketDetailServiceDto
+                {
+                    ServiceTicketDetailId = row.ServiceTicketDetailId,
+                    GarageService = new GarageServiceInfoDto
+                    {
+                        GarageServiceId = row.GarageServiceId,
+                        GarageServiceName = row.GarageServiceName,
+                        GarageServicePrice = row.GarageServicePrice
+                    }
+                });
+            }
+
             var tasksData = await connection.QueryAsync(tasksSql, parameters);
             var tasks = new List<TechnicalTaskDto>();
             foreach (var row in tasksData)
@@ -750,10 +766,25 @@ namespace SWP.Infrastructure.Repositories
                 });
             }
 
-            var services = await connection.QueryAsync<ServiceTicketDetailServiceDto>(servicesSql, parameters);
+            // Map garage services thủ công vì có nested object
+            var servicesData = await connection.QueryAsync(servicesSql, parameters);
+            var services = new List<ServiceTicketDetailServiceDto>();
+            foreach (var row in servicesData)
+            {
+                services.Add(new ServiceTicketDetailServiceDto
+                {
+                    ServiceTicketDetailId = row.ServiceTicketDetailId,
+                    GarageService = new GarageServiceInfoDto
+                    {
+                        GarageServiceId = row.GarageServiceId,
+                        GarageServiceName = row.GarageServiceName,
+                        GarageServicePrice = row.GarageServicePrice
+                    }
+                });
+            }
 
             task.Parts = parts;
-            task.GarageServices = services.ToList();
+            task.GarageServices = services;
 
             return task;
         }

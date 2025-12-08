@@ -63,17 +63,25 @@ namespace SWP.Infrastructure.Repositories
             }
 
             // Filter theo task status
-            if (filter.TaskStatus.HasValue)
+            if (filter.TaskStatus.HasValue && filter.TaskStatus.Value != 10)
             {
                 whereConditions.Add("tt.task_status = @TaskStatus");
                 parameters.Add("@TaskStatus", filter.TaskStatus.Value);
             }
+            if(filter.TaskStatus.HasValue && filter.TaskStatus.Value == 10)
+            {
+                whereConditions.Add("tt.task_status IN (0,1,2,3)");
+            }
 
             // Filter theo service ticket status (chỉ lấy chưa hoàn thành)
-            if (filter.ServiceTicketStatus.HasValue)
+            if (filter.ServiceTicketStatus.HasValue && filter.TaskStatus.Value != 10)
             {
                 whereConditions.Add("st.service_ticket_status = @ServiceTicketStatus");
                 parameters.Add("@ServiceTicketStatus", filter.ServiceTicketStatus.Value);
+            }
+            else if (filter.ServiceTicketStatus.HasValue && filter.ServiceTicketStatus.Value == 10)
+            {
+                whereConditions.Add("st.service_ticket_status IN (0,1,2,3,4,5)");
             }
             else
             {
@@ -96,7 +104,7 @@ namespace SWP.Infrastructure.Repositories
             // Sort
             var orderBy = "ORDER BY tt.technical_task_id DESC";
 
-            // Pagination
+            // Phan trang
             var offset = (filter.Page - 1) * filter.PageSize;
             parameters.Add("@Offset", offset);
             parameters.Add("@PageSize", filter.PageSize);
@@ -129,20 +137,18 @@ namespace SWP.Infrastructure.Repositories
                     tt.service_ticket_id AS ServiceTicketId,
                     st.service_ticket_code AS ServiceTicketCode,
                     tt.description AS Description,
-                    tt.assigned_to_technical AS AssignedToTechnical,
-                    u1.user_id AS UserId,
-                    u1.full_name AS FullName,
-                    u1.email AS Email,
-                    u1.phone AS Phone,
                     tt.assigned_at AS AssignedAt,
-                    tt.task_status AS TaskStatus,
-                    tt.confirmed_by AS ConfirmedBy,
-                    u2.user_id AS UserId,
-                    u2.full_name AS FullName,
-                    u2.email AS Email,
-                    u2.phone AS Phone,
+                    CAST(tt.task_status AS UNSIGNED) AS TaskStatus,
                     tt.confirmed_at AS ConfirmedAt,
-                    st.service_ticket_status AS ServiceTicketStatus
+                    CAST(st.service_ticket_status AS UNSIGNED) AS ServiceTicketStatus,
+                    u1.user_id AS AssignedToTechnicalUserId,
+                    u1.full_name AS AssignedToTechnicalFullName,
+                    u1.email AS AssignedToTechnicalEmail,
+                    u1.phone AS AssignedToTechnicalPhone,
+                    u2.user_id AS ConfirmedByUserId,
+                    u2.full_name AS ConfirmedByFullName,
+                    u2.email AS ConfirmedByEmail,
+                    u2.phone AS ConfirmedByPhone
                 FROM `technical_task` tt
                 INNER JOIN `service_ticket` st ON tt.service_ticket_id = st.service_ticket_id
                 LEFT JOIN `users` u1 ON tt.assigned_to_technical = u1.user_id
@@ -166,49 +172,162 @@ namespace SWP.Infrastructure.Repositories
                 INNER JOIN `service_ticket` st ON tt.service_ticket_id = st.service_ticket_id
                 INNER JOIN `vehicle` v ON st.vehicle_id = v.vehicle_id
                 LEFT JOIN `customer` c ON v.customer_id = c.customer_id
-                WHERE tt.technical_task_id = @Id";
+                WHERE tt.technical_task_id = @Id AND v.is_deleted = 0";
 
-            // Lấy parts và services từ service ticket detail
-            var partsServicesSql = @"
+            // Lấy parts từ service ticket detail
+            var partsSql = @"
                 SELECT 
                     std.service_ticket_detail_id AS ServiceTicketDetailId,
+                    std.quantity AS Quantity,
                     p.part_id AS PartId,
                     p.part_name AS PartName,
                     p.part_code AS PartCode,
-                    p.part_price AS InventoryPrice,
-                    p.part_quantity AS PartStock,
+                    p.part_quantity AS PartQuantity,
                     p.part_unit AS PartUnit,
-                    std.quantity AS Quantity
+                    p.part_price AS PartPrice,
+                    pc.part_category_id AS PartCategoryId,
+                    pc.part_category_name AS PartCategoryName,
+                    pc.part_category_code AS PartCategoryCode
                 FROM `service_ticket_detail` std
                 INNER JOIN `part` p ON std.part_id = p.part_id
+                LEFT JOIN `part_category` pc ON p.part_category_id = pc.part_category_id
                 INNER JOIN `technical_task` tt ON std.service_ticket_id = tt.service_ticket_id
-                WHERE tt.technical_task_id = @Id AND std.is_deleted = 0 AND std.part_id IS NOT NULL
-                
-                UNION ALL
-                
+                WHERE tt.technical_task_id = @Id AND std.is_deleted = 0 AND std.part_id IS NOT NULL AND p.is_deleted = 0";
+
+            // Lấy garage services từ service ticket detail
+            var servicesSql = @"
                 SELECT 
                     std.service_ticket_detail_id AS ServiceTicketDetailId,
-                    NULL AS PartId,
-                    NULL AS PartName,
-                    NULL AS PartCode,
-                    NULL AS InventoryPrice,
-                    NULL AS PartStock,
-                    NULL AS PartUnit,
-                    std.quantity AS Quantity
+                    gs.garage_service_id AS GarageServiceId,
+                    gs.garage_service_name AS GarageServiceName,
+                    gs.garage_service_price AS GarageServicePrice
                 FROM `service_ticket_detail` std
                 INNER JOIN `garage_service` gs ON std.garage_service_id = gs.garage_service_id
                 INNER JOIN `technical_task` tt ON std.service_ticket_id = tt.service_ticket_id
-                WHERE tt.technical_task_id = @Id AND std.is_deleted = 0 AND std.garage_service_id IS NOT NULL";
+                WHERE tt.technical_task_id = @Id AND std.is_deleted = 0 AND std.garage_service_id IS NOT NULL AND gs.is_deleted = 0";
+
+            var parameters = new DynamicParameters();
+            parameters.Add("@Id", id);
 
             using var connection = new MySqlConnection(_connection);
             
-            // Lấy task detail (cần query riêng vì có nested objects)
-            var task = await connection.QueryFirstOrDefaultAsync<dynamic>(taskSql, new { Id = id });
-            if (task == null) return null;
+            // Lấy task detail
+            var taskData = await connection.QueryFirstOrDefaultAsync(taskSql, parameters);
+            if (taskData == null) return null;
 
-            // TODO: Map to DTO properly - cần implement mapping logic
-            // Tạm thời return null, sẽ implement sau
-            return null;
+            // Map task info
+            var detail = new TechnicalTaskDetailDto
+            {
+                TechnicalTaskId = taskData.TechnicalTaskId,
+                ServiceTicketId = taskData.ServiceTicketId,
+                ServiceTicketCode = taskData.ServiceTicketCode,
+                Description = taskData.Description ?? string.Empty,
+                AssignedAt = taskData.AssignedAt,
+                TaskStatus = taskData.TaskStatus != null ? (byte?)Convert.ToByte(taskData.TaskStatus) : null,
+                ConfirmedAt = taskData.ConfirmedAt,
+                ServiceTicketStatus = taskData.ServiceTicketStatus != null ? (byte?)Convert.ToByte(taskData.ServiceTicketStatus) : null
+            };
+
+            // Map AssignedToTechnical
+            if (taskData.AssignedToTechnicalUserId != null)
+            {
+                detail.AssignedToTechnical = new SWP.Core.Dtos.SeriveTicketDto.UserInfoDto
+                {
+                    UserId = taskData.AssignedToTechnicalUserId,
+                    FullName = taskData.AssignedToTechnicalFullName,
+                    Email = taskData.AssignedToTechnicalEmail,
+                    Phone = taskData.AssignedToTechnicalPhone
+                };
+            }
+
+            // Map ConfirmedBy
+            if (taskData.ConfirmedByUserId != null)
+            {
+                detail.ConfirmedBy = new SWP.Core.Dtos.SeriveTicketDto.UserInfoDto
+                {
+                    UserId = taskData.ConfirmedByUserId,
+                    FullName = taskData.ConfirmedByFullName,
+                    Email = taskData.ConfirmedByEmail,
+                    Phone = taskData.ConfirmedByPhone
+                };
+            }
+
+            // Map customer and vehicle
+            var customerVehicleData = await connection.QueryFirstOrDefaultAsync(customerVehicleSql, parameters);
+            if (customerVehicleData != null)
+            {
+                detail.Customer = new SWP.Core.Dtos.SeriveTicketDto.CustomerInfoDto
+                {
+                    CustomerId = customerVehicleData.CustomerId,
+                    CustomerName = customerVehicleData.CustomerName,
+                    CustomerPhone = customerVehicleData.CustomerPhone,
+                    CustomerEmail = customerVehicleData.CustomerEmail
+                };
+
+                detail.Vehicle = new SWP.Core.Dtos.SeriveTicketDto.VehicleInfoDto
+                {
+                    VehicleId = customerVehicleData.VehicleId,
+                    VehicleName = customerVehicleData.VehicleName,
+                    VehicleLicensePlate = customerVehicleData.VehicleLicensePlate,
+                    CurrentKm = customerVehicleData.CurrentKm,
+                    Make = customerVehicleData.Make,
+                    Model = customerVehicleData.Model
+                };
+            }
+
+            // Map parts
+            var partsData = await connection.QueryAsync(partsSql, parameters);
+            var parts = new List<SWP.Core.Dtos.SeriveTicketDto.ServiceTicketDetailItemDto>();
+            foreach (var row in partsData)
+            {
+                var partInfo = new SWP.Core.Dtos.SeriveTicketDto.PartInfoDto
+                {
+                    PartId = row.PartId,
+                    PartName = row.PartName ?? string.Empty,
+                    PartCode = row.PartCode ?? string.Empty,
+                    PartPrice = row.PartPrice,
+                    PartQuantity = row.PartQuantity,
+                    PartUnit = row.PartUnit ?? string.Empty
+                };
+
+                if (row.PartCategoryId != null)
+                {
+                    partInfo.PartCategory = new SWP.Core.Dtos.SeriveTicketDto.PartCategoryInfoDto
+                    {
+                        PartCategoryId = row.PartCategoryId,
+                        PartCategoryName = row.PartCategoryName,
+                        PartCategoryCode = row.PartCategoryCode
+                    };
+                }
+
+                parts.Add(new SWP.Core.Dtos.SeriveTicketDto.ServiceTicketDetailItemDto
+                {
+                    ServiceTicketDetailId = row.ServiceTicketDetailId,
+                    Part = partInfo,
+                    Quantity = row.Quantity
+                });
+            }
+            detail.Parts = parts;
+
+            // Map garage services
+            var servicesData = await connection.QueryAsync(servicesSql, parameters);
+            var services = new List<SWP.Core.Dtos.SeriveTicketDto.ServiceTicketDetailServiceDto>();
+            foreach (var row in servicesData)
+            {
+                services.Add(new SWP.Core.Dtos.SeriveTicketDto.ServiceTicketDetailServiceDto
+                {
+                    ServiceTicketDetailId = row.ServiceTicketDetailId,
+                    GarageService = new SWP.Core.Dtos.SeriveTicketDto.GarageServiceInfoDto
+                    {
+                        GarageServiceId = row.GarageServiceId,
+                        GarageServiceName = row.GarageServiceName,
+                        GarageServicePrice = row.GarageServicePrice
+                    }
+                });
+            }
+            detail.GarageServices = services;
+
+            return detail;
         }
 
         /// <summary>

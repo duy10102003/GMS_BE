@@ -35,8 +35,9 @@ namespace SWP.Core.Entities
         [Column("is_deleted")]
         public int IsDeleted { get; set; } = 0;
 
-        // Navigation properties
+        // 
         public Role? Role { get; set; }
         public Customer? Customer { get; set; }
+        public ICollection<MechanicRolePermission>? MechanicRolePermissions { get; set; }
     }
 }

@@ -31,7 +31,7 @@ namespace SWP.Core.Entities
         [MaxLength(20)]
         public string? Status { get; set; }
 
-        // Navigation properties
+        //
         public ICollection<Part> Parts { get; set; } = new List<Part>();
     }
 }

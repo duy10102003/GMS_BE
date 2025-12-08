@@ -66,6 +66,13 @@ namespace SWP.Core.Interfaces.Services
         /// <param name="limit">Số lượng kết quả tối đa</param>
         /// <returns>Danh sách Part</returns>
         Task<List<PartSelectDto>> SearchForSelectAsync(string? searchKeyword, int limit = 50);
+
+        /// <summary>
+        /// Tìm kiếm Part cho select (với DTO request)
+        /// </summary>
+        /// <param name="request">Request tìm kiếm</param>
+        /// <returns>Danh sách Part</returns>
+        Task<List<PartSelectDto>> SearchForSelectAsync(PartSearchRequest request);
     }
 }
 
