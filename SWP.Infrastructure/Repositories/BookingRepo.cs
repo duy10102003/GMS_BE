@@ -37,6 +37,12 @@ namespace SWP.Infrastructure.Repositories
                 parameters.Add("@CustomerId", filter.CustomerId.Value);
             }
 
+            if (!string.IsNullOrWhiteSpace(filter.CustomerEmail))
+            {
+                whereConditions.Add("LOWER(c.customer_email) = @CustomerEmail");
+                parameters.Add("@CustomerEmail", filter.CustomerEmail.Trim().ToLower());
+            }
+
             // Column filters (simple mapping similar to ServiceTicketRepo)
             if (filter.ColumnFilters != null && filter.ColumnFilters.Any())
             {
@@ -210,7 +216,9 @@ namespace SWP.Infrastructure.Repositories
                 { "BookingStatus", "b.booking_status" },
                 { "VehicleName", "b.vehicle_name" },
                 { "CustomerName", "c.customer_name" },
-                { "CustomerPhone", "c.customer_phone" }
+                { "CustomerPhone", "c.customer_phone" },
+                { "CustomerEmail", "c.customer_email" },
+                { "Email", "c.customer_email" }
             };
 
             if (columnMap.TryGetValue(columnName, out var mapped))
