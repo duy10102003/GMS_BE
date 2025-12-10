@@ -828,7 +828,7 @@ namespace SWP.Core.Services
 
                     // Validate số lượng mới
                     await ValidatePartQuantityAsync(partDto.PartId, partDto.Quantity);
-
+                    await DeductPartQuantityAsync(partDto.PartId, partDto.Quantity);
                     var detail = await _serviceTicketDetailRepo.GetById(partDto.ServiceTicketDetailId.Value);
                     if (detail != null)
                     {
@@ -967,7 +967,7 @@ namespace SWP.Core.Services
                 {
                     if (detail.PartId.HasValue && detail.Quantity.HasValue)
                     {
-                        await DeductPartQuantityAsync(detail.PartId.Value, detail.Quantity.Value);
+                       // await DeductPartQuantityAsync(detail.PartId.Value, detail.Quantity.Value);
                     }
                 }
             }
@@ -1130,6 +1130,37 @@ namespace SWP.Core.Services
             serviceTicket.ModifiedDate = DateTime.UtcNow;
 
             return await _serviceTicketRepo.UpdateAsync(id, serviceTicket);
+        }
+
+        #endregion
+
+        #region Customer Operations
+        /// <summary>
+        /// Chuyển status sang CustomerConfirmation (7)
+        /// </summary>
+        public async Task<int> ChangeToCustomerConfirmationAsync(int id)
+        {
+            var serviceTicket = await _serviceTicketRepo.GetById(id);
+            if (serviceTicket == null)
+            {
+                throw new NotFoundException("Không tìm thấy service ticket.");
+            }
+
+
+            serviceTicket.ServiceTicketStatus = ServiceTicketStatus.ConfirmByCustomer;
+            serviceTicket.ModifiedDate = DateTime.UtcNow;
+
+            return await _serviceTicketRepo.UpdateAsync(id, serviceTicket);
+        }
+
+        public Task<PagedResult<ServiceTicketListItemDto>> GetPagingServiceTicketForCustomerAsync(int id, ServiceTicketFilterDtoRequest filter)
+        {
+            var result = _serviceTicketRepo.GetPagingServiceTicketForCustomerAsync(id,filter);
+            if (result == null)
+            {
+                throw new NotFoundException("Không tìm thấy danh sách service ticket.");
+            }
+            return result;
         }
 
         #endregion
@@ -1398,6 +1429,8 @@ namespace SWP.Core.Services
             var taskIdObj = await _technicalTaskRepo.InsertAsync(technicalTask);
             return taskIdObj is int tid ? tid : (int)taskIdObj;
         }
+
+       
 
         #endregion
     }

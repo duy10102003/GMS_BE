@@ -122,22 +122,57 @@ namespace SWP.Core.Services
                 InvoiceStatus = 0, // Pending
                 InvoiceCode = request.InvoiceCode
             };
-       
+
             // Chỉ cho phép chuyển từ Completed
-            if (serviceTicket.ServiceTicketStatus != ServiceTicketStatus.Completed)
-            {
-                throw new ValidateException("Chỉ có thể chuyển sang trạng thái này từ Completed.");
-            }
+            //if (serviceTicket.ServiceTicketStatus != ServiceTicketStatus.Completed)
+            //{
+            //    throw new ValidateException("Chỉ có thể chuyển sang trạng thái này từ Completed.");
+            //}
 
             // tao bao hanh
 
-
-            serviceTicket.ServiceTicketStatus = ServiceTicketStatus.CompletedPayment;
+            if (serviceTicket.ServiceTicketStatus != ServiceTicketStatus.Completed)
+            {
+                serviceTicket.ServiceTicketStatus = ServiceTicketStatus.CompletedPayment;
+            }
+            else
+            {
+                serviceTicket.ServiceTicketStatus = ServiceTicketStatus.Closed;
+            }
             serviceTicket.ModifiedDate = DateTime.UtcNow;
 
             await _serviceTicketRepo.UpdateAsync(request.ServiceTicketId, serviceTicket);
             var idObj = await _invoiceBaseRepo.InsertAsync(invoice);
             return idObj is int id ? id : (int)idObj;
+        }
+
+        /// <summary>
+        /// Chuyển trạng thái Invoice sang đã thanh toán (status = 1)
+        /// </summary>
+        public async Task ChangeStatusToPaidAsync(int id, int modifiedBy)
+        {
+            // Kiểm tra invoice tồn tại
+            var invoice = await _invoiceBaseRepo.GetById(id);
+            if (invoice == null)
+            {
+                throw new NotFoundException("Không tìm thấy invoice.");
+            }
+
+            // Kiểm tra invoice chưa bị xóa
+            if (invoice.IsDeleted == 1)
+            {
+                throw new NotFoundException("Invoice đã bị xóa.");
+            }
+
+            // Kiểm tra invoice chưa thanh toán
+            if (invoice.InvoiceStatus == 1)
+            {
+                throw new ValidateException("Invoice đã được thanh toán rồi.");
+            }
+
+            // Cập nhật trạng thái
+            invoice.InvoiceStatus = 1; // Paid
+            await _invoiceBaseRepo.UpdateAsync(id, invoice);
         }
     }
 }

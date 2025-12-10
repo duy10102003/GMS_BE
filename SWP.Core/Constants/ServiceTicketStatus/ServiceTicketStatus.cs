@@ -33,9 +33,21 @@ namespace SWP.Core.Constants.ServiceTicketStatus
         public const byte CompletedPayment = 5;
 
         /// <summary>
+        /// Đã hoàn thành thanh toan + hoan thanh sua chua (6)
+        /// </summary>
+        public const byte Closed = 6;
+
+        /// <summary>
         /// Đã hủy (4) - Chỉ hủy được khi chưa hoàn thành
         /// </summary>
         public const byte Cancelled = 4;
+
+        /// <summary>
+        /// Đã hoàn thành (7) - Khi customer nhấn xác nhận
+        /// </summary>
+        public const byte ConfirmByCustomer = 7;
+
+
     }
 }
 

@@ -65,6 +65,20 @@ namespace SWP.Api.Controllers
             return CreatedAtAction(nameof(GetById), new { id }, 
                 ApiResponse<object>.SuccessResponse(new { invoiceId = id }, "Tạo invoice thành công"));
         }
+
+        /// <summary>
+        /// Chuyển trạng thái Invoice sang đã thanh toán (status = 1)
+        /// </summary>
+        /// <param name="id">ID của Invoice</param>
+        /// <param name="modifiedBy">ID của người thực hiện</param>
+        /// <returns>Kết quả</returns>
+        [HttpPut("{id}/status/paid")]
+        public async Task<IActionResult> ChangeStatusToPaid(int id, [FromQuery] int modifiedBy)
+        {
+            await _invoiceService.ChangeStatusToPaidAsync(id, modifiedBy);
+            return Ok(ApiResponse<object>.SuccessResponse(null, "Chuyển trạng thái invoice sang đã thanh toán thành công"));
+        }
     }
 }
+
 
