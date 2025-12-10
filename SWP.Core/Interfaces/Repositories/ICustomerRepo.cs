@@ -33,3 +33,4 @@ namespace SWP.Core.Interfaces.Repositories
         Task<Customer?> FindByIdentityAsync(string customerName, string customerPhone, string? customerEmail);
     }
 }
+

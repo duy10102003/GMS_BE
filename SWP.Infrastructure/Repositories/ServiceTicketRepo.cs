@@ -859,6 +859,190 @@ namespace SWP.Infrastructure.Repositories
             var result = await connection.QueryAsync<ServiceTicketDetail>(sql, new { ServiceTicketId = serviceTicketId });
             return result.ToList();
         }
+        /// <summary>
+        /// Lấy danh sách Service Ticket theo Customer
+        /// </summary>
+        public async Task<PagedResult<ServiceTicketListItemDto>> GetPagingServiceTicketForCustomerAsync(int id, ServiceTicketFilterDtoRequest filter)
+        {
+            var parameters = new DynamicParameters();
+            var whereConditions = new List<string>();
+            var joinClauses = new List<string>();
+
+            // Base query - sử dụng subquery để lấy technical staff được assign
+            var baseSelect = @"SELECT DISTINCT
+                               st.service_ticket_id AS ServiceTicketId,
+                               st.service_ticket_code AS ServiceTicketCode,
+                               st.booking_id AS BookingId,
+                               st.vehicle_id AS VehicleId,
+                               v.vehicle_name AS VehicleName,
+                               v.vehicle_license_plate AS VehicleLicensePlate,
+                               c.customer_id AS CustomerId,
+                               c.customer_name AS CustomerName,
+                               c.customer_phone AS CustomerPhone,
+                               st.created_by AS CreatedBy,
+                               u1.full_name AS CreatedByName,
+                               st.created_date AS CreatedDate,
+                               st.modified_by AS ModifiedBy,
+                               u2.full_name AS ModifiedByName,
+                               st.modified_date AS ModifiedDate,
+                               CAST(st.service_ticket_status AS UNSIGNED) AS ServiceTicketStatus,
+                               st.initial_issue AS InitialIssue,
+                               (SELECT tt.assigned_to_technical
+                                     FROM technical_task tt 
+                                     WHERE tt.service_ticket_id = st.service_ticket_id 
+                                     LIMIT 1) AS AssignedToTechnical,
+
+                               (SELECT u3.full_name 
+                                     FROM technical_task tt 
+                                     LEFT JOIN users u3 
+                                     ON tt.assigned_to_technical = u3.user_id
+                                     WHERE tt.service_ticket_id = st.service_ticket_id 
+                                     LIMIT 1) AS AssignedToTechnicalName
+
+                               FROM service_ticket st
+                               LEFT JOIN vehicle v ON st.vehicle_id = v.vehicle_id
+                               LEFT JOIN customer c ON v.customer_id = c.customer_id
+                               LEFT JOIN users u1 ON st.created_by = u1.user_id
+                               LEFT JOIN users u2 ON st.modified_by = u2.user_id
+
+                               WHERE c.customer_id = @CustomerId
+                                     AND st.is_deleted = 0
+                                     AND v.is_deleted = 0
+                                     AND c.is_deleted = 0";
+
+            // Xử lý ColumnFilters
+            if (filter.ColumnFilters != null && filter.ColumnFilters.Any())
+            {
+                var filterIndex = 0;
+                foreach (var columnFilter in filter.ColumnFilters)
+                {
+                    if (string.IsNullOrWhiteSpace(columnFilter.ColumnName) ||
+                        string.IsNullOrWhiteSpace(columnFilter.Operator))
+                    {
+                        continue;
+                    }
+
+                    var paramName = $"@FilterValue{filterIndex}";
+                    var columnName = GetColumnNameForFilter(columnFilter.ColumnName, "st", "");
+
+                    switch (columnFilter.Operator.ToLower())
+                    {
+                        case "equals":
+                            whereConditions.Add($"{columnName} = {paramName}");
+                            parameters.Add(paramName, columnFilter.Value);
+                            break;
+                        case "not_equals":
+                            whereConditions.Add($"{columnName} != {paramName}");
+                            parameters.Add(paramName, columnFilter.Value);
+                            break;
+                        case "contains":
+                            whereConditions.Add($"{columnName} LIKE {paramName}");
+                            parameters.Add(paramName, $"%{columnFilter.Value}%");
+                            break;
+                        case "not_contains":
+                            whereConditions.Add($"{columnName} NOT LIKE {paramName}");
+                            parameters.Add(paramName, $"%{columnFilter.Value}%");
+                            break;
+                        case "starts_with":
+                            whereConditions.Add($"{columnName} LIKE {paramName}");
+                            parameters.Add(paramName, $"{columnFilter.Value}%");
+                            break;
+                        case "ends_with":
+                            whereConditions.Add($"{columnName} LIKE {paramName}");
+                            parameters.Add(paramName, $"%{columnFilter.Value}");
+                            break;
+                        case "empty":
+                            whereConditions.Add($"({columnName} IS NULL OR {columnName} = '')");
+                            break;
+                        case "not_empty":
+                            whereConditions.Add($"({columnName} IS NOT NULL AND {columnName} != '')");
+                            break;
+                        case "greater_than":
+                            whereConditions.Add($"{columnName} > {paramName}");
+                            parameters.Add(paramName, columnFilter.Value);
+                            break;
+                        case "less_than":
+                            whereConditions.Add($"{columnName} < {paramName}");
+                            parameters.Add(paramName, columnFilter.Value);
+                            break;
+                        case "greater_or_equal":
+                            whereConditions.Add($"{columnName} >= {paramName}");
+                            parameters.Add(paramName, columnFilter.Value);
+                            break;
+                        case "less_or_equal":
+                            whereConditions.Add($"{columnName} <= {paramName}");
+                            parameters.Add(paramName, columnFilter.Value);
+                            break;
+                    }
+                    filterIndex++;
+                }
+            }
+
+            // Build WHERE clause
+            var whereClause = whereConditions.Any()
+                ? "WHERE " + string.Join(" AND ", whereConditions)
+                : "";
+
+            // Count query
+            var countSql = @"
+                           SELECT COUNT(DISTINCT st.service_ticket_id)
+    FROM service_ticket st
+    LEFT JOIN vehicle v ON st.vehicle_id = v.vehicle_id
+    LEFT JOIN customer c ON v.customer_id = c.customer_id
+    LEFT JOIN technical_task tt ON st.service_ticket_id = tt.service_ticket_id
+    WHERE c.customer_id = @CustomerId
+      AND st.is_deleted = 0
+      AND v.is_deleted = 0
+      AND c.is_deleted = 0
+" + whereClause;
+
+            // Sort
+            var orderBy = "ORDER BY st.created_date DESC";
+            if (filter.ColumnSorts != null && filter.ColumnSorts.Any())
+            {
+                var sortParts = filter.ColumnSorts
+                    .Where(s => !string.IsNullOrWhiteSpace(s.ColumnName) &&
+                               !string.IsNullOrWhiteSpace(s.SortDirection))
+                    .Select(s =>
+                    {
+                        var columnName = GetColumnNameForSort(s.ColumnName, "st", "");
+                        var direction = s.SortDirection.ToUpper() == "ASC" ? "ASC" : "DESC";
+                        return $"{columnName} {direction}";
+                    });
+
+                if (sortParts.Any())
+                {
+                    orderBy = "ORDER BY " + string.Join(", ", sortParts);
+                }
+            }
+
+            // Pagination
+            var offset = (filter.Page - 1) * filter.PageSize;
+            
+            parameters.Add("@Offset", offset);
+            parameters.Add("@PageSize", filter.PageSize);
+
+            var dataSql = string.IsNullOrWhiteSpace(whereClause)
+                ? $"{baseSelect} {orderBy} LIMIT @PageSize OFFSET @Offset"
+                : $"{baseSelect} {whereClause} {orderBy} LIMIT @PageSize OFFSET @Offset";
+
+            using var connection = new MySqlConnection(_connection);
+            var customerId = await connection.ExecuteScalarAsync<int?>(
+                "SELECT customer_id FROM customer WHERE user_id = @UserId AND is_deleted = 0 LIMIT 1",
+                 new { UserId = id }
+            );
+            parameters.Add("@CustomerId", customerId);
+            var total = await connection.ExecuteScalarAsync<int>(countSql, new { @CustomerId = customerId });
+            var items = await connection.QueryAsync<ServiceTicketListItemDto>(dataSql, parameters);
+
+            return new PagedResult<ServiceTicketListItemDto>
+            {
+                Items = items,
+                Total = total,
+                Page = filter.Page,
+                PageSize = filter.PageSize
+            };
+        }
     }
 }
 

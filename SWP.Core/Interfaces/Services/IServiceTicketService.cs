@@ -141,6 +141,18 @@ namespace SWP.Core.Interfaces.Services
         Task<int> ConfirmTaskAsync(int technicalTaskId, int mechanicId);
 
         #endregion
+
+        #region Customer Operations 
+        Task<int> ChangeToCustomerConfirmationAsync(int id);
+
+        /// <summary>
+        /// Lấy danh sách Service Ticket có phân trang
+        /// </summary>
+        /// <param name="filter">Filter và phân trang</param>
+        /// <returns>Danh sách Service Ticket</returns>
+        Task<PagedResult<ServiceTicketListItemDto>> GetPagingServiceTicketForCustomerAsync(int id,ServiceTicketFilterDtoRequest filter);
+
+        #endregion
     }
 }
 

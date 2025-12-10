@@ -29,6 +29,15 @@ namespace SWP.Core.Interfaces.Services
         /// <param name="request">Thông tin Invoice</param>
         /// <returns>ID của Invoice vừa tạo</returns>
         Task<int> CreateFromServiceTicketAsync(InvoiceCreateDto request);
+
+        /// <summary>
+        /// Chuyển trạng thái Invoice sang đã thanh toán (status = 1)
+        /// </summary>
+        /// <param name="id">ID của Invoice</param>
+        /// <param name="modifiedBy">ID của người thực hiện</param>
+        /// <returns>Task</returns>
+        Task ChangeStatusToPaidAsync(int id, int modifiedBy);
     }
 }
+
 

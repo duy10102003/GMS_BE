@@ -86,7 +86,7 @@ namespace SWP.Infrastructure.Repositories
             else
             {
                 // Mặc định chỉ lấy service ticket chưa hoàn thành
-                whereConditions.Add("st.service_ticket_status != 3"); // != Completed
+                whereConditions.Add("st.service_ticket_status != 3 && st.service_ticket_status != 5 "); // != Completed
             }
 
             // Build WHERE clause

@@ -198,10 +198,11 @@ namespace SWP.Core.Services
             }
 
             // Kiểm tra status: chỉ cho phép hoàn thành khi status là InProgress
-            if (serviceTicket.ServiceTicketStatus != ServiceTicketStatus.InProgress)
-            {
-                throw new ValidateException("Chỉ có thể hoàn thành khi service ticket đang làm.");
-            }
+            //if (serviceTicket.ServiceTicketStatus != ServiceTicketStatus.InProgress 
+            //    && serviceTicket.ServiceTicketStatus != ServiceTicketStatus.CompletedPayment )
+            //{
+            //    throw new ValidateException("Chỉ có thể hoàn thành khi service ticket đang làm.");
+            //}
 
             // Lấy danh sách parts trong service ticket để deduct quantity
             var details = await _serviceTicketRepo.GetServiceTicketDetailsAsync(technicalTask.ServiceTicketId);
@@ -214,8 +215,14 @@ namespace SWP.Core.Services
             technicalTask.TaskStatus = 2; // Completed
             await _technicalTaskRepo.UpdateAsync(technicalTaskId, technicalTask);
 
-            // Cập nhật service ticket status
-            serviceTicket.ServiceTicketStatus = ServiceTicketStatus.Completed;
+            if (serviceTicket.ServiceTicketStatus != ServiceTicketStatus.CompletedPayment)
+            {
+                // Cập nhật service ticket status
+                serviceTicket.ServiceTicketStatus = ServiceTicketStatus.Completed;
+            } else if(serviceTicket.ServiceTicketStatus == ServiceTicketStatus.CompletedPayment)
+            {
+                serviceTicket.ServiceTicketStatus = ServiceTicketStatus.Closed;
+            }
             await _serviceTicketRepo.UpdateAsync(technicalTask.ServiceTicketId, serviceTicket);
 
             return 1;
@@ -278,4 +285,5 @@ namespace SWP.Core.Services
         #endregion
     }
 }
+
 
