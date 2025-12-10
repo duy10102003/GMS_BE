@@ -16,6 +16,34 @@ namespace SWP.Api.Controllers
             _mechanicRoleService = mechanicRoleService;
         }
 
+        [HttpPost]
+        public async Task<IActionResult> CreateRole([FromBody] MechanicRoleCreateDto request)
+        {
+            var id = await _mechanicRoleService.CreateRoleAsync(request);
+            return Ok(ApiResponse<object>.SuccessResponse(new { mechanicRoleId = id }, "Tạo mechanic role thành công"));
+        }
+
+        [HttpPut("{mechanicRoleId:int}")]
+        public async Task<IActionResult> UpdateRole(int mechanicRoleId, [FromBody] MechanicRoleUpdateDto request)
+        {
+            var affected = await _mechanicRoleService.UpdateRoleAsync(mechanicRoleId, request);
+            return Ok(ApiResponse<object>.SuccessResponse(new { affected }, "Cập nhật mechanic role thành công"));
+        }
+
+        [HttpDelete("{mechanicRoleId:int}")]
+        public async Task<IActionResult> DeleteRole(int mechanicRoleId)
+        {
+            var affected = await _mechanicRoleService.SoftDeleteRoleAsync(mechanicRoleId);
+            return Ok(ApiResponse<object>.SuccessResponse(new { affected }, "Xóa mechanic role thành công"));
+        }
+
+        [HttpGet("{mechanicRoleId:int}")]
+        public async Task<IActionResult> GetRoleById(int mechanicRoleId)
+        {
+            var result = await _mechanicRoleService.GetRoleByIdAsync(mechanicRoleId);
+            return Ok(ApiResponse<MechanicRoleDto?>.SuccessResponse(result, "Lấy mechanic role thành công"));
+        }
+
         [HttpGet]
         public async Task<IActionResult> GetRoles()
         {

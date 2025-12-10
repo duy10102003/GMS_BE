@@ -87,5 +87,52 @@ namespace SWP.Infrastructure.Repositories
             using var connection = new MySqlConnection(_connection);
             return await connection.ExecuteAsync(sql, new { UserId = userId, MechanicRoleId = mechanicRoleId });
         }
+
+        public async Task<MechanicRoleDto?> GetRoleByIdAsync(int mechanicRoleId)
+        {
+            const string sql = @"SELECT 
+                    mechanic_role_id AS MechanicRoleId,
+                    mechanic_role_name AS MechanicRoleName,
+                    mechanic_role_description AS MechanicRoleDescription
+                FROM mechanic_role
+                WHERE is_deleted = 0 AND mechanic_role_id = @MechanicRoleId
+                LIMIT 1";
+            using var connection = new MySqlConnection(_connection);
+            return await connection.QueryFirstOrDefaultAsync<MechanicRoleDto>(sql, new { MechanicRoleId = mechanicRoleId });
+        }
+
+        public async Task<int> CreateRoleAsync(MechanicRoleCreateDto request)
+        {
+            const string sql = @"INSERT INTO mechanic_role (mechanic_role_name, mechanic_role_description, is_deleted)
+                                 VALUES (@MechanicRoleName, @MechanicRoleDescription, 0);
+                                 SELECT LAST_INSERT_ID();";
+            using var connection = new MySqlConnection(_connection);
+            var id = await connection.ExecuteScalarAsync<long>(sql, request);
+            return (int)id;
+        }
+
+        public async Task<int> UpdateRoleAsync(int mechanicRoleId, MechanicRoleUpdateDto request)
+        {
+            const string sql = @"UPDATE mechanic_role
+                                 SET mechanic_role_name = @MechanicRoleName,
+                                     mechanic_role_description = @MechanicRoleDescription
+                                 WHERE mechanic_role_id = @MechanicRoleId AND is_deleted = 0";
+            using var connection = new MySqlConnection(_connection);
+            return await connection.ExecuteAsync(sql, new
+            {
+                MechanicRoleId = mechanicRoleId,
+                request.MechanicRoleName,
+                request.MechanicRoleDescription
+            });
+        }
+
+        public async Task<int> SoftDeleteRoleAsync(int mechanicRoleId)
+        {
+            const string sql = @"UPDATE mechanic_role
+                                 SET is_deleted = 1
+                                 WHERE mechanic_role_id = @MechanicRoleId";
+            using var connection = new MySqlConnection(_connection);
+            return await connection.ExecuteAsync(sql, new { MechanicRoleId = mechanicRoleId });
+        }
     }
 }

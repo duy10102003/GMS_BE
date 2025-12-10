@@ -32,5 +32,25 @@ namespace SWP.Core.Services
         {
             return _mechanicRoleRepo.RemoveAssignmentAsync(userId, mechanicRoleId);
         }
+
+        public Task<MechanicRoleDto?> GetRoleByIdAsync(int mechanicRoleId)
+        {
+            return _mechanicRoleRepo.GetRoleByIdAsync(mechanicRoleId);
+        }
+
+        public Task<int> CreateRoleAsync(MechanicRoleCreateDto request)
+        {
+            return _mechanicRoleRepo.CreateRoleAsync(request);
+        }
+
+        public Task<int> UpdateRoleAsync(int mechanicRoleId, MechanicRoleUpdateDto request)
+        {
+            return _mechanicRoleRepo.UpdateRoleAsync(mechanicRoleId, request);
+        }
+
+        public Task<int> SoftDeleteRoleAsync(int mechanicRoleId)
+        {
+            return _mechanicRoleRepo.SoftDeleteRoleAsync(mechanicRoleId);
+        }
     }
 }
