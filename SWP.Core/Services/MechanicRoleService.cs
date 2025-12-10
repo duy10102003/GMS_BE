@@ -1,0 +1,36 @@
+using SWP.Core.Dtos.MechanicRoleDto;
+using SWP.Core.Interfaces.Repositories;
+using SWP.Core.Interfaces.Services;
+
+namespace SWP.Core.Services
+{
+    public class MechanicRoleService : IMechanicRoleService
+    {
+        private readonly IMechanicRoleRepo _mechanicRoleRepo;
+
+        public MechanicRoleService(IMechanicRoleRepo mechanicRoleRepo)
+        {
+            _mechanicRoleRepo = mechanicRoleRepo;
+        }
+
+        public Task<List<MechanicRoleDto>> GetAllRolesAsync()
+        {
+            return _mechanicRoleRepo.GetAllRolesAsync();
+        }
+
+        public Task<List<MechanicRoleAssignmentDto>> GetAssignmentsByUserAsync(int userId)
+        {
+            return _mechanicRoleRepo.GetAssignmentsByUserAsync(userId);
+        }
+
+        public Task<int> AssignRoleAsync(AssignMechanicRoleRequest request)
+        {
+            return _mechanicRoleRepo.AssignRoleAsync(request);
+        }
+
+        public Task<int> RemoveAssignmentAsync(int userId, int mechanicRoleId)
+        {
+            return _mechanicRoleRepo.RemoveAssignmentAsync(userId, mechanicRoleId);
+        }
+    }
+}

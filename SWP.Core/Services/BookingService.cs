@@ -1,4 +1,5 @@
 using System;
+using SWP.Core.Constants.BookingStatus;
 using SWP.Core.Dtos;
 using SWP.Core.Dtos.BookingDto;
 using SWP.Core.Entities;
@@ -135,6 +136,29 @@ namespace SWP.Core.Services
             return await _bookingRepo.UpdateAsync(id, existing);
         }
 
+        public async Task<int> ChangeStatusAsync(int id, BookingChangeStatusDto request)
+        {
+            var existing = await _bookingRepo.GetById(id);
+            if (existing == null)
+            {
+                throw new NotFoundException("Khong tim thay booking.");
+            }
+
+            if (!IsValidStatus(request.BookingStatus))
+            {
+                throw new ValidateException("Trang thai booking khong hop le.");
+            }
+
+            existing.BookingStatus = request.BookingStatus;
+            if (request.Note != null)
+            {
+                existing.Note = request.Note.Trim();
+            }
+            existing.ModifiedDate = DateTime.UtcNow;
+
+            return await _bookingRepo.UpdateAsync(id, existing);
+        }
+
         public async Task<int> DeleteAsync(int id)
         {
             var existing = await _bookingRepo.GetById(id);
@@ -162,7 +186,7 @@ namespace SWP.Core.Services
                 BookingTime = bookingTime,
                 VehicleName = vehicleName?.Trim(),
                 Note = note?.Trim(),
-                BookingStatus = 0,
+                BookingStatus = BookingStatus.Pending,
                 CreatedDate = DateTime.UtcNow,
                 IsDeleted = 0
             };
@@ -236,6 +260,16 @@ namespace SWP.Core.Services
             {
                 return false;
             }
+        }
+
+        private static bool IsValidStatus(byte status)
+        {
+            return status == BookingStatus.Pending
+                   || status == BookingStatus.Confirmed
+                   || status == BookingStatus.Declined
+                   || status == BookingStatus.Cancelled
+                   || status == BookingStatus.Completed
+                   || status == BookingStatus.NoShow;
         }
     }
 }
