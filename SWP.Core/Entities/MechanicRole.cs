@@ -16,9 +16,9 @@ namespace SWP.Core.Entities
         [Key]
         public int MechanicRoleId { get; set; }
         [Column("mechanic_role_name")]
-        public int MechanicRoleName { get; set; }
+        public string? MechanicRoleName { get; set; }
         [Column("mechanic_role_description")]
-        public int MechanicRoleDescription { get; set; }
+        public string? MechanicRoleDescription { get; set; }
         [Column("is_deleted")]
         public int IsDeleted { get; set; }
         public ICollection<MechanicRolePermission>? MechanicRolePermissions { get; set; }

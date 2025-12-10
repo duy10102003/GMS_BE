@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
 using SWP.Core.Dtos;
 using SWP.Core.Dtos.BookingDto;
 using SWP.Core.Interfaces.Services;
@@ -85,6 +84,17 @@ namespace SWP.Api.Controllers
             var response = ApiResponse<object>.SuccessResponse(
                 new { affectedRows = result },
                 "Xóa booking thành công"
+            );
+            return Ok(response);
+        }
+
+        [HttpPut("{id:int}/status")]
+        public async Task<IActionResult> ChangeStatus(int id, [FromBody] BookingChangeStatusDto request)
+        {
+            var result = await _bookingService.ChangeStatusAsync(id, request);
+            var response = ApiResponse<object>.SuccessResponse(
+                new { affectedRows = result },
+                "Cap nhat trang thai booking thanh cong"
             );
             return Ok(response);
         }

@@ -29,8 +29,8 @@ namespace SWP.Core.Entities
         [Column("note")]
         public string? Note { get; set; }
 
-        [Column("issue_picture")]
-        public string? IssuePicture { get; set; }
+        // [Column("issue_picture")]
+        // public string? IssuePicture { get; set; }
 
         [Column("created_date")]
         public DateTime? CreatedDate { get; set; }
