@@ -71,5 +71,6 @@ namespace SWP.Api.Controllers
             var affected = await _mechanicRoleService.RemoveAssignmentAsync(userId, mechanicRoleId);
             return Ok(ApiResponse<int>.SuccessResponse(affected, "Hủy gán role mechanic thành công"));
         }
+        //abcd
     }
 }
