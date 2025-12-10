@@ -31,6 +31,31 @@ namespace SWP.Infrastructure.Repositories
             return result.ToList();
         }
 
+        public async Task<List<MechanicRoleMechanicDto>> GetMechanicsByRoleAsync(int mechanicRoleId)
+        {
+            const string sql = @"
+                SELECT 
+                    mrp.mechanic_role_permission_id AS MechanicRolePermissionId,
+                    mrp.mechanic_role_id AS MechanicRoleId,
+                    mr.mechanic_role_name AS MechanicRoleName,
+                    u.user_id AS UserId,
+                    u.full_name AS FullName,
+                    u.email AS Email,
+                    u.phone AS Phone,
+                    mrp.year_exp AS YearExp
+                FROM mechanic_role_permission mrp
+                INNER JOIN mechanic_role mr ON mrp.mechanic_role_id = mr.mechanic_role_id
+                INNER JOIN users u ON mrp.user_id = u.user_id
+                WHERE mrp.is_deleted = 0 
+                    AND mr.is_deleted = 0
+                    AND u.is_deleted = 0
+                    AND mrp.mechanic_role_id = @MechanicRoleId";
+
+            using var connection = new MySqlConnection(_connection);
+            var result = await connection.QueryAsync<MechanicRoleMechanicDto>(sql, new { MechanicRoleId = mechanicRoleId });
+            return result.ToList();
+        }
+
         public async Task<List<MechanicRoleAssignmentDto>> GetAssignmentsByUserAsync(int userId)
         {
             const string sql = @"

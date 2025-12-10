@@ -6,6 +6,7 @@ namespace SWP.Core.Interfaces.Repositories
     public interface IMechanicRoleRepo : IBaseRepo<MechanicRole>
     {
         Task<List<MechanicRoleDto>> GetAllRolesAsync();
+        Task<List<MechanicRoleMechanicDto>> GetMechanicsByRoleAsync(int mechanicRoleId);
         Task<List<MechanicRoleAssignmentDto>> GetAssignmentsByUserAsync(int userId);
         Task<int> AssignRoleAsync(AssignMechanicRoleRequest request);
         Task<int> RemoveAssignmentAsync(int userId, int mechanicRoleId);
