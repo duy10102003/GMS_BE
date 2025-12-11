@@ -1,10 +1,14 @@
+using SWP.Core.Dtos;
 using SWP.Core.Dtos.MechanicRoleDto;
 
 namespace SWP.Core.Interfaces.Services
 {
     public interface IMechanicRoleService
     {
+        Task<PagedResult<MechanicRoleDto>> GetPagingAsync(MechanicRoleFilterDtoRequest filter);
         Task<List<MechanicRoleDto>> GetAllRolesAsync();
+        Task<PagedResult<MechanicRoleMechanicDto>> GetMechanicsByRolePagingAsync(int mechanicRoleId, MechanicRoleMechanicFilterDtoRequest filter);
+        Task<List<MechanicRoleMechanicDto>> GetMechanicsByRoleAsync(int mechanicRoleId);
         Task<List<MechanicRoleAssignmentDto>> GetAssignmentsByUserAsync(int userId);
         Task<int> AssignRoleAsync(AssignMechanicRoleRequest request);
         Task<int> RemoveAssignmentAsync(int userId, int mechanicRoleId);

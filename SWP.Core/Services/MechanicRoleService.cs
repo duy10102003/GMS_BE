@@ -1,3 +1,4 @@
+using SWP.Core.Dtos;
 using SWP.Core.Dtos.MechanicRoleDto;
 using SWP.Core.Interfaces.Repositories;
 using SWP.Core.Interfaces.Services;
@@ -13,9 +14,24 @@ namespace SWP.Core.Services
             _mechanicRoleRepo = mechanicRoleRepo;
         }
 
+        public Task<PagedResult<MechanicRoleDto>> GetPagingAsync(MechanicRoleFilterDtoRequest filter)
+        {
+            return _mechanicRoleRepo.GetPagingAsync(filter);
+        }
+
         public Task<List<MechanicRoleDto>> GetAllRolesAsync()
         {
             return _mechanicRoleRepo.GetAllRolesAsync();
+        }
+
+        public Task<PagedResult<MechanicRoleMechanicDto>> GetMechanicsByRolePagingAsync(int mechanicRoleId, MechanicRoleMechanicFilterDtoRequest filter)
+        {
+            return _mechanicRoleRepo.GetMechanicsByRolePagingAsync(mechanicRoleId, filter);
+        }
+
+        public Task<List<MechanicRoleMechanicDto>> GetMechanicsByRoleAsync(int mechanicRoleId)
+        {
+            return _mechanicRoleRepo.GetMechanicsByRoleAsync(mechanicRoleId);
         }
 
         public Task<List<MechanicRoleAssignmentDto>> GetAssignmentsByUserAsync(int userId)

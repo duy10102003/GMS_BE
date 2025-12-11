@@ -71,5 +71,43 @@ namespace SWP.Api.Controllers
             var affected = await _mechanicRoleService.RemoveAssignmentAsync(userId, mechanicRoleId);
             return Ok(ApiResponse<int>.SuccessResponse(affected, "Hủy gán role mechanic thành công"));
         }
+
+        [HttpGet("{mechanicRoleId:int}/mechanics")]
+        public async Task<IActionResult> GetMechanicsByRole(int mechanicRoleId)
+        {
+            var result = await _mechanicRoleService.GetMechanicsByRoleAsync(mechanicRoleId);
+            return Ok(ApiResponse<List<MechanicRoleMechanicDto>>.SuccessResponse(result, "Lấy danh sách thợ theo mechanic role thành công"));
+        }
+
+        [HttpPost("{mechanicRoleId:int}/mechanics/paging")]
+        public async Task<IActionResult> GetMechanicsByRolePaging(int mechanicRoleId, [FromBody] MechanicRoleMechanicFilterDtoRequest filter)
+        {
+            var result = await _mechanicRoleService.GetMechanicsByRolePagingAsync(mechanicRoleId, filter);
+            return Ok(ApiResponse<object>.SuccessResponse(new
+            {
+                items = result.Items,
+                total = result.Total,
+                page = result.Page,
+                pageSize = result.PageSize
+            }, "Lay danh sach tho theo mechanic role co phan trang thanh cong"));
+        }
+
+        [HttpPost("paging")]
+        public async Task<IActionResult> GetPaging([FromBody] MechanicRoleFilterDtoRequest filter)
+        {
+            var result = await _mechanicRoleService.GetPagingAsync(filter);
+            return Ok(ApiResponse<object>.SuccessResponse(new
+            {
+                items = result.Items,
+                total = result.Total,
+                page = result.Page,
+                pageSize = result.PageSize
+            }, "Lay danh sach mechanic role co phan trang thanh cong"));
+        }
+        //abcd
     }
 }
+
+
+
+
