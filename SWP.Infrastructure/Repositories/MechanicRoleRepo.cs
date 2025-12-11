@@ -1,10 +1,15 @@
 using Dapper;
 using Microsoft.Extensions.Configuration;
+using SWP.Core.Dtos;
 using SWP.Core.Dtos.MechanicRoleDto;
 using SWP.Core.Entities;
 using SWP.Core.Interfaces.Repositories;
 using MySqlConnector;
 using MISA.QLSX.Infrastructure.Repositories;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace SWP.Infrastructure.Repositories
 {
@@ -15,6 +20,129 @@ namespace SWP.Infrastructure.Repositories
         public MechanicRoleRepo(IConfiguration configuration) : base(configuration)
         {
             _connection = configuration.GetConnectionString("DefaultConnection");
+        }
+
+        public async Task<PagedResult<MechanicRoleDto>> GetPagingAsync(MechanicRoleFilterDtoRequest filter)
+        {
+            var parameters = new DynamicParameters();
+            var whereConditions = new List<string>();
+
+            const string baseSelect = @"
+                SELECT 
+                    mr.mechanic_role_id AS MechanicRoleId,
+                    mr.mechanic_role_name AS MechanicRoleName,
+                    mr.mechanic_role_description AS MechanicRoleDescription
+                FROM mechanic_role mr
+                WHERE mr.is_deleted = 0";
+
+            if (filter.ColumnFilters != null && filter.ColumnFilters.Any())
+            {
+                var filterIndex = 0;
+                foreach (var columnFilter in filter.ColumnFilters)
+                {
+                    if (string.IsNullOrWhiteSpace(columnFilter.ColumnName) ||
+                        string.IsNullOrWhiteSpace(columnFilter.Operator))
+                    {
+                        continue;
+                    }
+
+                    var paramName = $"@FilterValue{filterIndex}";
+                    var columnName = GetColumnNameForFilter(columnFilter.ColumnName);
+                    if (string.IsNullOrEmpty(columnName))
+                    {
+                        continue;
+                    }
+
+                    switch (columnFilter.Operator.ToLower())
+                    {
+                        case "equals":
+                            whereConditions.Add($"{columnName} = {paramName}");
+                            parameters.Add(paramName, columnFilter.Value);
+                            break;
+                        case "not_equals":
+                            whereConditions.Add($"{columnName} != {paramName}");
+                            parameters.Add(paramName, columnFilter.Value);
+                            break;
+                        case "contains":
+                            whereConditions.Add($"{columnName} LIKE {paramName}");
+                            parameters.Add(paramName, $"%{columnFilter.Value}%");
+                            break;
+                        case "not_contains":
+                            whereConditions.Add($"{columnName} NOT LIKE {paramName}");
+                            parameters.Add(paramName, $"%{columnFilter.Value}%");
+                            break;
+                        case "starts_with":
+                            whereConditions.Add($"{columnName} LIKE {paramName}");
+                            parameters.Add(paramName, $"{columnFilter.Value}%");
+                            break;
+                        case "ends_with":
+                            whereConditions.Add($"{columnName} LIKE {paramName}");
+                            parameters.Add(paramName, $"%{columnFilter.Value}");
+                            break;
+                        case "empty":
+                            whereConditions.Add($"({columnName} IS NULL OR {columnName} = '')");
+                            break;
+                        case "not_empty":
+                            whereConditions.Add($"({columnName} IS NOT NULL AND {columnName} != '')");
+                            break;
+                    }
+
+                    filterIndex++;
+                }
+            }
+
+            var whereClause = whereConditions.Any()
+                ? " AND " + string.Join(" AND ", whereConditions)
+                : string.Empty;
+
+            var page = filter.Page <= 0 ? 1 : filter.Page;
+            var pageSize = filter.PageSize <= 0 ? 10 : filter.PageSize;
+
+            var countSql = $@"
+                SELECT COUNT(1)
+                FROM mechanic_role mr
+                WHERE mr.is_deleted = 0{whereClause}";
+
+            var orderBy = "ORDER BY mr.mechanic_role_id DESC";
+            if (filter.ColumnSorts != null && filter.ColumnSorts.Any())
+            {
+                var sortParts = filter.ColumnSorts
+                    .Where(s => !string.IsNullOrWhiteSpace(s.ColumnName) && !string.IsNullOrWhiteSpace(s.SortDirection))
+                    .Select(s =>
+                    {
+                        var columnName = GetColumnNameForSort(s.ColumnName);
+                        if (string.IsNullOrEmpty(columnName))
+                        {
+                            return string.Empty;
+                        }
+                        var direction = s.SortDirection.ToUpper() == "ASC" ? "ASC" : "DESC";
+                        return $"{columnName} {direction}";
+                    })
+                    .Where(x => !string.IsNullOrEmpty(x));
+
+                if (sortParts.Any())
+                {
+                    orderBy = "ORDER BY " + string.Join(", ", sortParts);
+                }
+            }
+
+            var offset = (page - 1) * pageSize;
+            parameters.Add("@Offset", offset);
+            parameters.Add("@PageSize", pageSize);
+
+            var dataSql = $"{baseSelect}{whereClause} {orderBy} LIMIT @Offset, @PageSize";
+
+            using var connection = new MySqlConnection(_connection);
+            var total = await connection.QuerySingleAsync<int>(countSql, parameters);
+            var items = await connection.QueryAsync<MechanicRoleDto>(dataSql, parameters);
+
+            return new PagedResult<MechanicRoleDto>
+            {
+                Items = items,
+                Total = total,
+                Page = page,
+                PageSize = pageSize
+            };
         }
 
         public async Task<List<MechanicRoleDto>> GetAllRolesAsync()
@@ -158,6 +286,26 @@ namespace SWP.Infrastructure.Repositories
                                  WHERE mechanic_role_id = @MechanicRoleId";
             using var connection = new MySqlConnection(_connection);
             return await connection.ExecuteAsync(sql, new { MechanicRoleId = mechanicRoleId });
+        }
+
+        private string GetColumnNameForFilter(string propertyName)
+        {
+            return propertyName switch
+            {
+                "MechanicRoleName" => "mr.mechanic_role_name",
+                "MechanicRoleDescription" => "mr.mechanic_role_description",
+                _ => string.Empty
+            };
+        }
+
+        private string GetColumnNameForSort(string propertyName)
+        {
+            return propertyName switch
+            {
+                "MechanicRoleId" => "mr.mechanic_role_id",
+                "MechanicRoleName" => "mr.mechanic_role_name",
+                _ => string.Empty
+            };
         }
     }
 }

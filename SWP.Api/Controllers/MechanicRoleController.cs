@@ -78,6 +78,19 @@ namespace SWP.Api.Controllers
             var result = await _mechanicRoleService.GetMechanicsByRoleAsync(mechanicRoleId);
             return Ok(ApiResponse<List<MechanicRoleMechanicDto>>.SuccessResponse(result, "Lấy danh sách thợ theo mechanic role thành công"));
         }
+
+        [HttpPost("paging")]
+        public async Task<IActionResult> GetPaging([FromBody] MechanicRoleFilterDtoRequest filter)
+        {
+            var result = await _mechanicRoleService.GetPagingAsync(filter);
+            return Ok(ApiResponse<object>.SuccessResponse(new
+            {
+                items = result.Items,
+                total = result.Total,
+                page = result.Page,
+                pageSize = result.PageSize
+            }, "Lay danh sach mechanic role co phan trang thanh cong"));
+        }
         //abcd
     }
 }

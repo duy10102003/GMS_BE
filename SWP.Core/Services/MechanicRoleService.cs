@@ -1,3 +1,4 @@
+using SWP.Core.Dtos;
 using SWP.Core.Dtos.MechanicRoleDto;
 using SWP.Core.Interfaces.Repositories;
 using SWP.Core.Interfaces.Services;
@@ -11,6 +12,11 @@ namespace SWP.Core.Services
         public MechanicRoleService(IMechanicRoleRepo mechanicRoleRepo)
         {
             _mechanicRoleRepo = mechanicRoleRepo;
+        }
+
+        public Task<PagedResult<MechanicRoleDto>> GetPagingAsync(MechanicRoleFilterDtoRequest filter)
+        {
+            return _mechanicRoleRepo.GetPagingAsync(filter);
         }
 
         public Task<List<MechanicRoleDto>> GetAllRolesAsync()
