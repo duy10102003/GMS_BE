@@ -145,6 +145,142 @@ namespace SWP.Infrastructure.Repositories
             };
         }
 
+        public async Task<PagedResult<MechanicRoleMechanicDto>> GetMechanicsByRolePagingAsync(int mechanicRoleId, MechanicRoleMechanicFilterDtoRequest filter)
+        {
+            var parameters = new DynamicParameters();
+            var whereConditions = new List<string>
+            {
+                "mrp.is_deleted = 0",
+                "mr.is_deleted = 0",
+                "u.is_deleted = 0",
+                "mrp.mechanic_role_id = @MechanicRoleId"
+            };
+            parameters.Add("@MechanicRoleId", mechanicRoleId);
+
+            const string baseSelect = @"
+                SELECT 
+                    mrp.mechanic_role_permission_id AS MechanicRolePermissionId,
+                    mrp.mechanic_role_id AS MechanicRoleId,
+                    mr.mechanic_role_name AS MechanicRoleName,
+                    u.user_id AS UserId,
+                    u.full_name AS FullName,
+                    u.email AS Email,
+                    u.phone AS Phone,
+                    mrp.year_exp AS YearExp
+                FROM mechanic_role_permission mrp
+                INNER JOIN mechanic_role mr ON mrp.mechanic_role_id = mr.mechanic_role_id
+                INNER JOIN users u ON mrp.user_id = u.user_id";
+
+            if (filter.ColumnFilters != null && filter.ColumnFilters.Any())
+            {
+                var filterIndex = 0;
+                foreach (var columnFilter in filter.ColumnFilters)
+                {
+                    if (string.IsNullOrWhiteSpace(columnFilter.ColumnName) ||
+                        string.IsNullOrWhiteSpace(columnFilter.Operator))
+                    {
+                        continue;
+                    }
+
+                    var paramName = $"@FilterValue{filterIndex}";
+                    var columnName = GetMechanicColumnNameForFilter(columnFilter.ColumnName);
+                    if (string.IsNullOrEmpty(columnName))
+                    {
+                        continue;
+                    }
+
+                    switch (columnFilter.Operator.ToLower())
+                    {
+                        case "equals":
+                            whereConditions.Add($"{columnName} = {paramName}");
+                            parameters.Add(paramName, columnFilter.Value);
+                            break;
+                        case "not_equals":
+                            whereConditions.Add($"{columnName} != {paramName}");
+                            parameters.Add(paramName, columnFilter.Value);
+                            break;
+                        case "contains":
+                            whereConditions.Add($"{columnName} LIKE {paramName}");
+                            parameters.Add(paramName, $"%{columnFilter.Value}%");
+                            break;
+                        case "not_contains":
+                            whereConditions.Add($"{columnName} NOT LIKE {paramName}");
+                            parameters.Add(paramName, $"%{columnFilter.Value}%");
+                            break;
+                        case "starts_with":
+                            whereConditions.Add($"{columnName} LIKE {paramName}");
+                            parameters.Add(paramName, $"{columnFilter.Value}%");
+                            break;
+                        case "ends_with":
+                            whereConditions.Add($"{columnName} LIKE {paramName}");
+                            parameters.Add(paramName, $"%{columnFilter.Value}");
+                            break;
+                        case "empty":
+                            whereConditions.Add($"({columnName} IS NULL OR {columnName} = '')");
+                            break;
+                        case "not_empty":
+                            whereConditions.Add($"({columnName} IS NOT NULL AND {columnName} != '')");
+                            break;
+                    }
+
+                    filterIndex++;
+                }
+            }
+
+            var whereClause = " WHERE " + string.Join(" AND ", whereConditions);
+
+            var page = filter.Page <= 0 ? 1 : filter.Page;
+            var pageSize = filter.PageSize <= 0 ? 10 : filter.PageSize;
+
+            var countSql = $@"
+                SELECT COUNT(1)
+                FROM mechanic_role_permission mrp
+                INNER JOIN mechanic_role mr ON mrp.mechanic_role_id = mr.mechanic_role_id
+                INNER JOIN users u ON mrp.user_id = u.user_id
+                {whereClause}";
+
+            var orderBy = "ORDER BY u.full_name ASC, mrp.mechanic_role_permission_id DESC";
+            if (filter.ColumnSorts != null && filter.ColumnSorts.Any())
+            {
+                var sortParts = filter.ColumnSorts
+                    .Where(s => !string.IsNullOrWhiteSpace(s.ColumnName) && !string.IsNullOrWhiteSpace(s.SortDirection))
+                    .Select(s =>
+                    {
+                        var columnName = GetMechanicColumnNameForSort(s.ColumnName);
+                        if (string.IsNullOrEmpty(columnName))
+                        {
+                            return string.Empty;
+                        }
+                        var direction = s.SortDirection.ToUpper() == "ASC" ? "ASC" : "DESC";
+                        return $"{columnName} {direction}";
+                    })
+                    .Where(x => !string.IsNullOrEmpty(x));
+
+                if (sortParts.Any())
+                {
+                    orderBy = "ORDER BY " + string.Join(", ", sortParts);
+                }
+            }
+
+            var offset = (page - 1) * pageSize;
+            parameters.Add("@Offset", offset);
+            parameters.Add("@PageSize", pageSize);
+
+            var dataSql = $"{baseSelect}{whereClause} {orderBy} LIMIT @Offset, @PageSize";
+
+            using var connection = new MySqlConnection(_connection);
+            var total = await connection.QuerySingleAsync<int>(countSql, parameters);
+            var items = await connection.QueryAsync<MechanicRoleMechanicDto>(dataSql, parameters);
+
+            return new PagedResult<MechanicRoleMechanicDto>
+            {
+                Items = items,
+                Total = total,
+                Page = page,
+                PageSize = pageSize
+            };
+        }
+
         public async Task<List<MechanicRoleDto>> GetAllRolesAsync()
         {
             const string sql = @"SELECT 
@@ -304,6 +440,31 @@ namespace SWP.Infrastructure.Repositories
             {
                 "MechanicRoleId" => "mr.mechanic_role_id",
                 "MechanicRoleName" => "mr.mechanic_role_name",
+                _ => string.Empty
+            };
+        }
+
+        private string GetMechanicColumnNameForFilter(string propertyName)
+        {
+            return propertyName switch
+            {
+                "FullName" => "u.full_name",
+                "Email" => "u.email",
+                "Phone" => "u.phone",
+                "YearExp" => "mrp.year_exp",
+                _ => string.Empty
+            };
+        }
+
+        private string GetMechanicColumnNameForSort(string propertyName)
+        {
+            return propertyName switch
+            {
+                "FullName" => "u.full_name",
+                "Email" => "u.email",
+                "Phone" => "u.phone",
+                "YearExp" => "mrp.year_exp",
+                "MechanicRolePermissionId" => "mrp.mechanic_role_permission_id",
                 _ => string.Empty
             };
         }

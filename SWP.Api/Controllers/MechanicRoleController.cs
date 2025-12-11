@@ -79,6 +79,19 @@ namespace SWP.Api.Controllers
             return Ok(ApiResponse<List<MechanicRoleMechanicDto>>.SuccessResponse(result, "Lấy danh sách thợ theo mechanic role thành công"));
         }
 
+        [HttpPost("{mechanicRoleId:int}/mechanics/paging")]
+        public async Task<IActionResult> GetMechanicsByRolePaging(int mechanicRoleId, [FromBody] MechanicRoleMechanicFilterDtoRequest filter)
+        {
+            var result = await _mechanicRoleService.GetMechanicsByRolePagingAsync(mechanicRoleId, filter);
+            return Ok(ApiResponse<object>.SuccessResponse(new
+            {
+                items = result.Items,
+                total = result.Total,
+                page = result.Page,
+                pageSize = result.PageSize
+            }, "Lay danh sach tho theo mechanic role co phan trang thanh cong"));
+        }
+
         [HttpPost("paging")]
         public async Task<IActionResult> GetPaging([FromBody] MechanicRoleFilterDtoRequest filter)
         {
@@ -94,4 +107,7 @@ namespace SWP.Api.Controllers
         //abcd
     }
 }
+
+
+
 

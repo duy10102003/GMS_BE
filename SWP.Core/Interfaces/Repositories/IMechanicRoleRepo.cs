@@ -8,6 +8,7 @@ namespace SWP.Core.Interfaces.Repositories
     {
         Task<PagedResult<MechanicRoleDto>> GetPagingAsync(MechanicRoleFilterDtoRequest filter);
         Task<List<MechanicRoleDto>> GetAllRolesAsync();
+        Task<PagedResult<MechanicRoleMechanicDto>> GetMechanicsByRolePagingAsync(int mechanicRoleId, MechanicRoleMechanicFilterDtoRequest filter);
         Task<List<MechanicRoleMechanicDto>> GetMechanicsByRoleAsync(int mechanicRoleId);
         Task<List<MechanicRoleAssignmentDto>> GetAssignmentsByUserAsync(int userId);
         Task<int> AssignRoleAsync(AssignMechanicRoleRequest request);

@@ -24,6 +24,11 @@ namespace SWP.Core.Services
             return _mechanicRoleRepo.GetAllRolesAsync();
         }
 
+        public Task<PagedResult<MechanicRoleMechanicDto>> GetMechanicsByRolePagingAsync(int mechanicRoleId, MechanicRoleMechanicFilterDtoRequest filter)
+        {
+            return _mechanicRoleRepo.GetMechanicsByRolePagingAsync(mechanicRoleId, filter);
+        }
+
         public Task<List<MechanicRoleMechanicDto>> GetMechanicsByRoleAsync(int mechanicRoleId)
         {
             return _mechanicRoleRepo.GetMechanicsByRoleAsync(mechanicRoleId);
