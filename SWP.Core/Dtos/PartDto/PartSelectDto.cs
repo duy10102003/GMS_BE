@@ -11,6 +11,7 @@ namespace SWP.Core.Dtos.PartDto
         public string PartCode { get; set; } = string.Empty;
         public int PartQuantity { get; set; }
         public string PartUnit { get; set; } = string.Empty;
+        public int PartPrice { get; set; }
     }
 }
 

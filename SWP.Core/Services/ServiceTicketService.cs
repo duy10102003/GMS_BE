@@ -1024,10 +1024,10 @@ namespace SWP.Core.Services
             }
 
             // Chỉ cho phép chuyển từ PendingTechnicalConfirmation
-            if (serviceTicket.ServiceTicketStatus != ServiceTicketStatus.PendingTechnicalConfirmation)
-            {
-                throw new ValidateException("Chỉ có thể chuyển sang trạng thái này từ PendingTechnicalConfirmation.");
-            }
+            //if (serviceTicket.ServiceTicketStatus != ServiceTicketStatus.PendingTechnicalConfirmation)
+            //{
+            //    throw new ValidateException("Chỉ có thể chuyển sang trạng thái này từ PendingTechnicalConfirmation.");
+            //}
 
             await EnsureUserExists(request.ModifiedBy);
 
@@ -1050,10 +1050,10 @@ namespace SWP.Core.Services
             }
 
             // Chỉ cho phép chuyển từ AdjustedByTechnical
-            if (serviceTicket.ServiceTicketStatus != ServiceTicketStatus.AdjustedByTechnical)
-            {
-                throw new ValidateException("Chỉ có thể chuyển sang trạng thái này từ AdjustedByTechnical.");
-            }
+            //if (serviceTicket.ServiceTicketStatus != ServiceTicketStatus.AdjustedByTechnical)
+            //{
+            //    throw new ValidateException("Chỉ có thể chuyển sang trạng thái này từ AdjustedByTechnical.");
+            //}
 
             await EnsureUserExists(request.ModifiedBy);
 
