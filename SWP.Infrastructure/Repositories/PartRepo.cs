@@ -225,7 +225,8 @@ namespace SWP.Infrastructure.Repositories
                     p.part_name AS PartName,
                     p.part_code AS PartCode,
                     p.part_quantity AS PartQuantity,
-                    p.part_unit AS PartUnit
+                    p.part_unit AS PartUnit,
+                    p.part_price AS PartPrice
                 FROM `part` p
                 WHERE p.is_deleted = 0
                 ORDER BY p.part_name ASC";
@@ -246,7 +247,8 @@ namespace SWP.Infrastructure.Repositories
                     p.part_name AS PartName,
                     p.part_code AS PartCode,
                     p.part_quantity AS PartQuantity,
-                    p.part_unit AS PartUnit
+                    p.part_unit AS PartUnit,
+                    p.part_price AS PartPrice
                 FROM `part` p
                 WHERE p.is_deleted = 0";
 

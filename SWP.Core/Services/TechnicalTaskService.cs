@@ -78,10 +78,10 @@ namespace SWP.Core.Services
             }
 
             // Kiểm tra status: chỉ cho phép điều chỉnh khi status là PendingTechnicalConfirmation
-            if (serviceTicket.ServiceTicketStatus != ServiceTicketStatus.PendingTechnicalConfirmation)
-            {
-                throw new ValidateException("Chỉ có thể điều chỉnh khi service ticket đang chờ technical xác nhận.");
-            }
+            //if (serviceTicket.ServiceTicketStatus != ServiceTicketStatus.PendingTechnicalConfirmation)
+            //{
+            //    throw new ValidateException("Chỉ có thể điều chỉnh khi service ticket đang chờ technical xác nhận.");
+            //}
 
             // Lấy danh sách service ticket detail hiện tại để rollback part quantity
             var currentDetails = await _serviceTicketRepo.GetServiceTicketDetailsAsync(technicalTask.ServiceTicketId);
