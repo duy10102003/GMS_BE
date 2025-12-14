@@ -131,14 +131,16 @@ namespace SWP.Core.Services
 
             // tao bao hanh
 
-            if (serviceTicket.ServiceTicketStatus != ServiceTicketStatus.Completed)
-            {
-                serviceTicket.ServiceTicketStatus = ServiceTicketStatus.CompletedPayment;
-            }
-            else
-            {
-                serviceTicket.ServiceTicketStatus = ServiceTicketStatus.Closed;
-            }
+
+
+            //if (serviceTicket.ServiceTicketStatus != ServiceTicketStatus.Completed)
+            //{
+            //    serviceTicket.ServiceTicketStatus = ServiceTicketStatus.CompletedPayment;
+            //}
+            //else
+            //{
+            //    serviceTicket.ServiceTicketStatus = ServiceTicketStatus.Closed;
+            //}
             serviceTicket.ModifiedDate = DateTime.UtcNow;
 
             await _serviceTicketRepo.UpdateAsync(request.ServiceTicketId, serviceTicket);
@@ -170,9 +172,36 @@ namespace SWP.Core.Services
                 throw new ValidateException("Invoice đã được thanh toán rồi.");
             }
 
+            // Lấy service ticket
+            var serviceTicket = await _serviceTicketRepo.GetById(invoice.ServiceTicketId);
+            if (serviceTicket == null || serviceTicket.IsDeleted == 1)
+                throw new NotFoundException("Không tìm thấy service ticket.");
             // Cập nhật trạng thái
             invoice.InvoiceStatus = 1; // Paid
             await _invoiceBaseRepo.UpdateAsync(id, invoice);
+
+            // Xử lý theo trạng thái service ticket
+            if (serviceTicket.ServiceTicketStatus == ServiceTicketStatus.Completed)
+            {
+                // Closed
+                serviceTicket.ServiceTicketStatus = ServiceTicketStatus.Closed;
+                serviceTicket.ModifiedBy = modifiedBy;
+                serviceTicket.ModifiedDate = DateTime.Now;
+
+                await _serviceTicketRepo.UpdateAsync(serviceTicket.ServiceTicketId, serviceTicket);
+
+                // Tạo bảo hành
+                //await CreateWarrantyForServiceTicketAsync(serviceTicket.ServiceTicketId);
+            }
+            else
+            {
+                // Chỉ chuyển sang đã thanh toán
+                serviceTicket.ServiceTicketStatus = ServiceTicketStatus.CompletedPayment;
+                serviceTicket.ModifiedBy = modifiedBy;
+                serviceTicket.ModifiedDate = DateTime.Now;
+
+                await _serviceTicketRepo.UpdateAsync(serviceTicket.ServiceTicketId, serviceTicket);
+            }
         }
     }
 }
