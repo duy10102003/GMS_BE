@@ -19,17 +19,20 @@ namespace SWP.Core.Services
         private readonly IServiceTicketRepo _serviceTicketRepo;
         private readonly IBaseRepo<ServiceTicketDetail> _serviceTicketDetailRepo;
         private readonly IPartRepo _partRepo;
+        private readonly IInvoiceRepo _invoiceRepo;
 
         public TechnicalTaskService(
             ITechnicalTaskRepo technicalTaskRepo,
             IServiceTicketRepo serviceTicketRepo,
             IBaseRepo<ServiceTicketDetail> serviceTicketDetailRepo,
-            IPartRepo partRepo)
+            IPartRepo partRepo,
+            IInvoiceRepo invoiceRepo)
         {
             _technicalTaskRepo = technicalTaskRepo;
             _serviceTicketRepo = serviceTicketRepo;
             _serviceTicketDetailRepo = serviceTicketDetailRepo;
             _partRepo = partRepo;
+            _invoiceRepo = invoiceRepo;
         }
 
         /// <summary>
@@ -215,15 +218,24 @@ namespace SWP.Core.Services
             technicalTask.TaskStatus = 2; // Completed
             await _technicalTaskRepo.UpdateAsync(technicalTaskId, technicalTask);
 
-            if (serviceTicket.ServiceTicketStatus != ServiceTicketStatus.CompletedPayment)
+            // Kiểm tra invoice đã thanh toán chưa
+            var invoice = await _invoiceRepo
+                .GetByServiceTicketIdAsync(serviceTicket.ServiceTicketId);
+
+            if (invoice != null && invoice.InvoiceStatus == 1) // Paid
             {
-                // Cập nhật service ticket status
-                serviceTicket.ServiceTicketStatus = ServiceTicketStatus.Completed;
-            } else if(serviceTicket.ServiceTicketStatus == ServiceTicketStatus.CompletedPayment)
-            {
+                // Đã thanh toán → Closed
                 serviceTicket.ServiceTicketStatus = ServiceTicketStatus.Closed;
+                // tạo bảo hành
             }
-            await _serviceTicketRepo.UpdateAsync(technicalTask.ServiceTicketId, serviceTicket);
+            else
+            {
+                // Chưa thanh toán → Completed
+                serviceTicket.ServiceTicketStatus = ServiceTicketStatus.Completed;
+            }
+
+            serviceTicket.ModifiedDate = DateTime.UtcNow;
+            await _serviceTicketRepo.UpdateAsync(serviceTicket.ServiceTicketId, serviceTicket);
 
             return 1;
         }
