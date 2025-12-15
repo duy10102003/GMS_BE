@@ -28,6 +28,7 @@ builder.Services.AddScoped<ICustomerService, CustomerService>();
 builder.Services.AddScoped<IVehicleService, VehicleService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IMechanicRoleService, MechanicRoleService>();
+builder.Services.AddScoped<IWarrantyService, WarrantyService>();
 
 //Dang ky Repo
 builder.Services.AddScoped<IServiceTicketRepo, ServiceTicketRepo>();
@@ -39,6 +40,7 @@ builder.Services.AddScoped<ITechnicalTaskRepo, TechnicalTaskRepo>();
 builder.Services.AddScoped<IInvoiceRepo, InvoiceRepo>();
 builder.Services.AddScoped<ICustomerRepo, CustomerRepo>();
 builder.Services.AddScoped<IVehicleRepo, VehicleRepo>();
+builder.Services.AddScoped<IWarrantyRepo, WarrantyRepo>();
 builder.Services.AddScoped<IUserRepo, UserRepo>();
 builder.Services.AddScoped<IMechanicRoleRepo, MechanicRoleRepo>();
 builder.Services.AddScoped<IBaseRepo<User>, BaseRepo<User>>();
@@ -51,8 +53,12 @@ builder.Services.AddScoped<IBaseRepo<TechnicalTask>, BaseRepo<TechnicalTask>>();
 builder.Services.AddScoped<IBaseRepo<GarageService>, BaseRepo<GarageService>>();
 builder.Services.AddScoped<IBaseRepo<PartCategory>, BaseRepo<PartCategory>>();
 builder.Services.AddScoped<IBaseRepo<Invoice>, BaseRepo<Invoice>>();
+builder.Services.AddScoped<IBaseRepo<Warranty>, BaseRepo<Warranty>>();
 builder.Services.AddScoped<IBaseRepo<MechanicRole>, BaseRepo<MechanicRole>>();
 builder.Services.AddScoped<IBaseRepo<MechanicRolePermission>, BaseRepo<MechanicRolePermission>>();
+
+//Add host
+builder.Services.AddHostedService<WarrantyExpireBackgroundService>();
 //Khai báo cross để FE gọi đến 
 builder.Services.AddCors(options =>
 {
