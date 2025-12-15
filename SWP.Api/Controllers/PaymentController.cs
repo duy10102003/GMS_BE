@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using SWP.Core.Dtos.PaymentDto;
 using SWP.Core.Helpers.Vnpay;
 using SWP.Core.Interfaces.Repositories;
@@ -12,11 +13,13 @@ namespace SWP.Api.Controllers
     {
         private readonly IConfiguration _config;
         private readonly IInvoiceRepo _invoiceRepo;
+        private readonly ILogger<PaymentController> _logger;
 
-        public PaymentController(IConfiguration config, IInvoiceRepo invoiceRepo)
+        public PaymentController(IConfiguration config, IInvoiceRepo invoiceRepo, ILogger<PaymentController> logger)
         {
             _config = config;
             _invoiceRepo = invoiceRepo;
+            _logger = logger;
         }
 
         [HttpPost("vnpay/create")]
@@ -30,21 +33,26 @@ namespace SWP.Api.Controllers
 
             vnp.AddRequestData("vnp_Version", "2.1.0");
             vnp.AddRequestData("vnp_Command", "pay");
-            vnp.AddRequestData("vnp_TmnCode", _config["VnPay:TmnCode"]);
+            vnp.AddRequestData("vnp_TmnCode", _config["VnPay:TmnCode"] ?? string.Empty);
+            vnp.AddRequestData("vnp_SecureHashType", "SHA512");
             vnp.AddRequestData("vnp_Amount", ((long)(request.Amount * 100)).ToString());
             vnp.AddRequestData("vnp_CreateDate", DateTime.Now.ToString("yyyyMMddHHmmss"));
             vnp.AddRequestData("vnp_CurrCode", "VND");
-            vnp.AddRequestData("vnp_IpAddr", HttpContext.Connection.RemoteIpAddress?.ToString());
+            vnp.AddRequestData("vnp_IpAddr", HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty);
             vnp.AddRequestData("vnp_Locale", "vn");
             vnp.AddRequestData("vnp_OrderInfo", $"Thanh toan hoa don {invoice.InvoiceCode}");
             vnp.AddRequestData("vnp_OrderType", "other");
-            vnp.AddRequestData("vnp_ReturnUrl", _config["VnPay:ReturnUrl"]);
+            vnp.AddRequestData("vnp_ReturnUrl", _config["VnPay:ReturnUrl"] ?? string.Empty);
             vnp.AddRequestData("vnp_TxnRef", invoice.InvoiceId.ToString());
 
+            var signData = vnp.BuildRequestSignData();
             var paymentUrl = vnp.CreateRequestUrl(
-                _config["VnPay:BaseUrl"],
-                _config["VnPay:HashSecret"]
+                _config["VnPay:BaseUrl"] ?? string.Empty,
+                _config["VnPay:HashSecret"] ?? string.Empty
             );
+
+            _logger.LogInformation("VNPAY create request. TxnRef={TxnRef}, SignData={SignData}, PaymentUrl={PaymentUrl}",
+                invoice.InvoiceId, signData, paymentUrl);
 
             return Ok(new
             {
@@ -60,14 +68,20 @@ namespace SWP.Api.Controllers
             foreach (var key in Request.Query.Keys)
             {
                 if (key.StartsWith("vnp_"))
-                    vnp.AddResponseData(key, Request.Query[key]);
+                    vnp.AddResponseData(key, Request.Query[key].ToString());
             }
 
-            var secureHash = Request.Query["vnp_SecureHash"];
+            var secureHash = Request.Query["vnp_SecureHash"].ToString();
+            var responseSignData = vnp.BuildResponseSignData();
             var isValid = vnp.ValidateSignature(
-                secureHash,
-                _config["VnPay:HashSecret"]
+                secureHash ?? string.Empty,
+                _config["VnPay:HashSecret"] ?? string.Empty
             );
+
+            _logger.LogInformation("VNPAY return. RawSecureHash={SecureHash}, Recomputed={Recomputed}, SignData={SignData}",
+                secureHash,
+                _config["VnPay:HashSecret"] != null ? vnp.BuildResponseSignData() : string.Empty,
+                responseSignData);
 
             if (!isValid)
                 return BadRequest("Invalid signature");
