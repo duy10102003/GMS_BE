@@ -30,6 +30,9 @@ namespace SWP.Core.Interfaces.Repositories
         /// <param name="serviceTicketId">ID của Service Ticket</param>
         /// <returns>Invoice</returns>
         Task<Invoice?> GetByServiceTicketIdAsync(int serviceTicketId);
+        Task<Invoice?> GetByIdAsync(int invoiceId);
+        Task MarkAsPaidAsync(int invoiceId);
+        Task MarkAsFailedAsync(int invoiceId);
     }
 }
 

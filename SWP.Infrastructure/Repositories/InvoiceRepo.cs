@@ -290,6 +290,58 @@ namespace SWP.Infrastructure.Repositories
             using var connection = new MySqlConnection(_connection);
             return await connection.QueryFirstOrDefaultAsync<Invoice>(sql, new { ServiceTicketId = serviceTicketId });
         }
+
+        public async Task MarkAsPaidAsync(int invoiceId)
+        {
+            var sql = @"
+        UPDATE invoice
+        SET invoice_status = 1
+        WHERE invoice_id = @InvoiceId";
+            using var connection = new MySqlConnection(_connection);
+            await connection.ExecuteAsync(sql, new { InvoiceId = invoiceId });
+        }
+
+        public async Task MarkAsFailedAsync(int invoiceId)
+        {
+            var sql = @"
+        UPDATE invoice
+        SET invoice_status = 0
+        WHERE invoice_id = @InvoiceId";
+            using var connection = new MySqlConnection(_connection);
+            await connection.ExecuteAsync(sql, new { InvoiceId = invoiceId });
+        }
+
+
+        public async Task<Invoice?> GetByIdAsync(int invoiceId)
+        {
+            const string sql = @"
+                SELECT 
+                    invoice_id        AS InvoiceId,
+                    service_ticket_id AS ServiceTicketId,
+                    customer_id       AS CustomerId,
+                    issue_date         AS IssueDate,
+                    parts_amount       AS PartsAmount,
+                    garage_service_amount AS GarageServiceAmount,
+                    tax_amount         AS TaxAmount,
+                    discount_amount    AS DiscountAmount,
+                    total_amount       AS TotalAmount,
+                    invoice_status     AS InvoiceStatus,
+                    invoice_code       AS InvoiceCode,
+                    is_deleted         AS IsDeleted
+                FROM invoice
+                WHERE invoice_id = @InvoiceId
+                  AND is_deleted = 0
+                LIMIT 1;
+            ";
+
+            using var connection = new MySqlConnection(_connection);
+
+            return await connection.QueryFirstOrDefaultAsync<Invoice>(
+                sql,
+                new { InvoiceId = invoiceId }
+            );
+        }
+
     }
 }
 

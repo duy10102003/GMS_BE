@@ -18,15 +18,18 @@ namespace SWP.Core.Services
         private readonly IInvoiceRepo _invoiceRepo;
         private readonly IServiceTicketRepo _serviceTicketRepo;
         private readonly IBaseRepo<Invoice> _invoiceBaseRepo;
+        private readonly IWarrantyRepo _warrantyRepo;
 
         public InvoiceService(
             IInvoiceRepo invoiceRepo,
             IServiceTicketRepo serviceTicketRepo,
-            IBaseRepo<Invoice> invoiceBaseRepo)
+            IBaseRepo<Invoice> invoiceBaseRepo,
+            IWarrantyRepo warrantyRepo)
         {
             _invoiceRepo = invoiceRepo;
             _serviceTicketRepo = serviceTicketRepo;
             _invoiceBaseRepo = invoiceBaseRepo;
+            _warrantyRepo = warrantyRepo;
         }
 
         /// <summary>
@@ -191,7 +194,7 @@ namespace SWP.Core.Services
                 await _serviceTicketRepo.UpdateAsync(serviceTicket.ServiceTicketId, serviceTicket);
 
                 // Tạo bảo hành
-                //await CreateWarrantyForServiceTicketAsync(serviceTicket.ServiceTicketId);
+                await _warrantyRepo.CreateWarrantyForServiceTicketAsync(serviceTicket.ServiceTicketId);
             }
             else
             {

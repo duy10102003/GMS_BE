@@ -20,19 +20,22 @@ namespace SWP.Core.Services
         private readonly IBaseRepo<ServiceTicketDetail> _serviceTicketDetailRepo;
         private readonly IPartRepo _partRepo;
         private readonly IInvoiceRepo _invoiceRepo;
+        private readonly IWarrantyRepo _warrantyRepo;
 
         public TechnicalTaskService(
             ITechnicalTaskRepo technicalTaskRepo,
             IServiceTicketRepo serviceTicketRepo,
             IBaseRepo<ServiceTicketDetail> serviceTicketDetailRepo,
             IPartRepo partRepo,
-            IInvoiceRepo invoiceRepo)
+            IInvoiceRepo invoiceRepo,
+            IWarrantyRepo warrantyRepo)
         {
             _technicalTaskRepo = technicalTaskRepo;
             _serviceTicketRepo = serviceTicketRepo;
             _serviceTicketDetailRepo = serviceTicketDetailRepo;
             _partRepo = partRepo;
             _invoiceRepo = invoiceRepo;
+            _warrantyRepo = warrantyRepo;
         }
 
         /// <summary>
@@ -227,6 +230,7 @@ namespace SWP.Core.Services
                 // Đã thanh toán → Closed
                 serviceTicket.ServiceTicketStatus = ServiceTicketStatus.Closed;
                 // tạo bảo hành
+                await _warrantyRepo.CreateWarrantyForServiceTicketAsync(serviceTicket.ServiceTicketId);
             }
             else
             {
@@ -293,6 +297,8 @@ namespace SWP.Core.Services
             part.PartQuantity += quantity;
             await _partRepo.UpdateAsync(partId, part);
         }
+
+
 
         #endregion
     }
