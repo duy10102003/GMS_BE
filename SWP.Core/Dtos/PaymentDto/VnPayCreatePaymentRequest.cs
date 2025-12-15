@@ -9,6 +9,6 @@ namespace SWP.Core.Dtos.PaymentDto
     public class VnPayCreatePaymentRequest
     {
         public int InvoiceId { get; set; }
-        public decimal Amount { get; set; }
+        //public decimal Amount { get; set; }
     }
 }

@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using SWP.Core.Dtos.PaymentDto;
 using SWP.Core.Helpers.Vnpay;
 using SWP.Core.Interfaces.Repositories;
+using SWP.Core.Interfaces.Services;
 
 namespace SWP.Api.Controllers
 {
@@ -13,13 +14,18 @@ namespace SWP.Api.Controllers
     {
         private readonly IConfiguration _config;
         private readonly IInvoiceRepo _invoiceRepo;
+        private readonly IInvoiceService _invoiceService;
         private readonly ILogger<PaymentController> _logger;
 
-        public PaymentController(IConfiguration config, IInvoiceRepo invoiceRepo, ILogger<PaymentController> logger)
+        public PaymentController(IConfiguration config, 
+            IInvoiceRepo invoiceRepo, 
+            ILogger<PaymentController> logger,
+            IInvoiceService invoiceService)
         {
             _config = config;
             _invoiceRepo = invoiceRepo;
             _logger = logger;
+            _invoiceService = invoiceService;
         }
 
         [HttpPost("vnpay/create")]
@@ -35,7 +41,7 @@ namespace SWP.Api.Controllers
             vnp.AddRequestData("vnp_Command", "pay");
             vnp.AddRequestData("vnp_TmnCode", _config["VnPay:TmnCode"] ?? string.Empty);
             vnp.AddRequestData("vnp_SecureHashType", "SHA512");
-            vnp.AddRequestData("vnp_Amount", ((long)(request.Amount * 100)).ToString());
+            vnp.AddRequestData("vnp_Amount", ((long)(invoice.TotalAmount * 100)).ToString());
             vnp.AddRequestData("vnp_CreateDate", DateTime.Now.ToString("yyyyMMddHHmmss"));
             vnp.AddRequestData("vnp_CurrCode", "VND");
             vnp.AddRequestData("vnp_IpAddr", HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty);
@@ -78,10 +84,10 @@ namespace SWP.Api.Controllers
                 _config["VnPay:HashSecret"] ?? string.Empty
             );
 
-            _logger.LogInformation("VNPAY return. RawSecureHash={SecureHash}, Recomputed={Recomputed}, SignData={SignData}",
-                secureHash,
-                _config["VnPay:HashSecret"] != null ? vnp.BuildResponseSignData() : string.Empty,
-                responseSignData);
+            //_logger.LogInformation("VNPAY return. RawSecureHash={SecureHash}, Recomputed={Recomputed}, SignData={SignData}",
+            //    secureHash,
+            //    _config["VnPay:HashSecret"] != null ? vnp.BuildResponseSignData() : string.Empty,
+            //    responseSignData);
 
             if (!isValid)
                 return BadRequest("Invalid signature");
@@ -91,7 +97,7 @@ namespace SWP.Api.Controllers
 
             if (responseCode == "00")
             {
-                await _invoiceRepo.MarkAsPaidAsync(invoiceId);
+                await _invoiceService.ChangeStatusToPaidAsync(invoiceId, 1);
                 return Redirect("http://localhost:5173/payment-success");
             }
             else
