@@ -30,10 +30,13 @@ namespace SWP.Core.Helpers.Vnpay
 
         public string CreateRequestUrl(string baseUrl, string hashSecret)
         {
-            var query = string.Join("&", _requestData.Select(x =>
+            // vnp_SecureHashType must be sent to VNPAY but excluded from the signature
+            var orderedRequest = _requestData.OrderBy(x => x.Key, StringComparer.Ordinal);
+
+            var query = string.Join("&", orderedRequest.Select(x =>
                 $"{x.Key}={WebUtility.UrlEncode(x.Value)}"));
 
-            var signData = string.Join("&", _requestData.Select(x => $"{x.Key}={x.Value}"));
+            var signData = BuildRequestSignData();
             var hash = HmacSHA512(hashSecret, signData);
 
             return $"{baseUrl}?{query}&vnp_SecureHash={hash}";
@@ -41,19 +44,35 @@ namespace SWP.Core.Helpers.Vnpay
 
         public bool ValidateSignature(string inputHash, string secret)
         {
-            var signData = string.Join("&", _responseData
-                .Where(x => x.Key != "vnp_SecureHash")
-                .Select(x => $"{x.Key}={x.Value}"));
+            var signData = BuildResponseSignData();
 
             var hash = HmacSHA512(secret, signData);
             return hash.Equals(inputHash, StringComparison.OrdinalIgnoreCase);
+        }
+
+        public string BuildRequestSignData()
+        {
+            var signedRequestData = _requestData
+                .Where(x => x.Key != "vnp_SecureHash" && x.Key != "vnp_SecureHashType")
+                .OrderBy(x => x.Key, StringComparer.Ordinal);
+
+            return string.Join("&", signedRequestData.Select(x => $"{x.Key}={WebUtility.UrlEncode(x.Value)}"));
+        }
+
+        public string BuildResponseSignData()
+        {
+            var signedResponseData = _responseData
+                .Where(x => x.Key != "vnp_SecureHash" && x.Key != "vnp_SecureHashType")
+                .OrderBy(x => x.Key, StringComparer.Ordinal);
+
+            return string.Join("&", signedResponseData.Select(x => $"{x.Key}={WebUtility.UrlEncode(x.Value)}"));
         }
 
         private static string HmacSHA512(string key, string input)
         {
             using var hmac = new HMACSHA512(Encoding.UTF8.GetBytes(key));
             return BitConverter.ToString(hmac.ComputeHash(Encoding.UTF8.GetBytes(input)))
-                .Replace("-", "").ToLower();
+                .Replace("-", "").ToUpperInvariant();
         }
     }
 
