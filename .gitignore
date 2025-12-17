@@ -55,3 +55,8 @@ Thumbs.db
 
 # Don’t ignore:
 !appsettings.json
+/SWP.Core.UnitTest/ServiceTicketService/COMPLETION_GUIDE.md
+/SWP.Core.UnitTest/ServiceTicketService/README.md
+/SWP.Core.UnitTest/ServiceTicketService/SUMMARY.md
+/SWP.Core.UnitTest/ServiceTicketService/TROUBLESHOOTING.md
+/SWP.Core.UnitTest/SWP - Backup.Core.UnitTest.csproj
