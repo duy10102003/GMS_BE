@@ -25,6 +25,11 @@ namespace SWP.Core.Dtos.InvoiceDto
         public byte? InvoiceStatus { get; set; }
 
         /// <summary>
+        /// Key để search
+        /// </summary>
+        public string? KeyWord { get; set; }
+
+        /// <summary>
         /// Từ ngày
         /// </summary>
         public DateTime? FromDate { get; set; }

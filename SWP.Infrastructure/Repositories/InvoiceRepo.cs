@@ -52,6 +52,12 @@ namespace SWP.Infrastructure.Repositories
                 LEFT JOIN `customer` c ON i.customer_id = c.customer_id
                 WHERE i.is_deleted = 0";
 
+            // Giữ lại keyword để tương thích
+            if (!string.IsNullOrWhiteSpace(filter.KeyWord))
+            {
+                whereConditions.Add("LOWER(st.service_ticket_code) LIKE @keyword OR LOWER(c.customer_name) LIKE @keyword OR LOWER(c.customer_phone) LIKE @keyword ");
+                parameters.Add("@keyword", $"%{filter.KeyWord.Trim().ToLower()}%");
+            }
             // Filter theo customer
             if (filter.CustomerId.HasValue)
             {
@@ -93,10 +99,13 @@ namespace SWP.Infrastructure.Repositories
 
             // Count query
             var countSql = $@"
-                SELECT COUNT(1)
-                FROM `invoice` i
-                LEFT JOIN `customer` c ON i.customer_id = c.customer_id
-                WHERE i.is_deleted = 0{whereClause}";
+    SELECT COUNT(DISTINCT i.invoice_id)
+    FROM `invoice` i
+    INNER JOIN `service_ticket` st 
+        ON i.service_ticket_id = st.service_ticket_id
+    LEFT JOIN `customer` c 
+        ON i.customer_id = c.customer_id
+    WHERE i.is_deleted = 0{whereClause}";
 
             // Sort
             var orderBy = "ORDER BY i.invoice_id DESC";

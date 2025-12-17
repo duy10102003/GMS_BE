@@ -67,6 +67,12 @@ namespace SWP.Infrastructure.Repositories
                 LEFT JOIN users u1 ON st.created_by = u1.user_id
                 LEFT JOIN users u2 ON st.modified_by = u2.user_id";
 
+            // Giữ lại keyword để tương thích
+            if (!string.IsNullOrWhiteSpace(filter.KeyWord))
+            {
+                whereConditions.Add("(LOWER(st.service_ticket_code)) LIKE @keyword OR (LOWER(c.customer_name)) LIKE @keyword OR (LOWER(c.customer_phone)) LIKE @keyword ");
+                parameters.Add("@keyword", $"%{filter.KeyWord.Trim().ToLower()}%");
+            }
             // Xử lý ColumnFilters
             if (filter.ColumnFilters != null && filter.ColumnFilters.Any())
             {
@@ -910,6 +916,23 @@ namespace SWP.Infrastructure.Repositories
                                      AND v.is_deleted = 0
                                      AND c.is_deleted = 0";
 
+
+            // Giữ lại keyword để tương thích
+            if (!string.IsNullOrWhiteSpace(filter.KeyWord))
+            {
+                whereConditions.Add(@"
+(
+    LOWER(st.service_ticket_code) LIKE @keyword
+    OR EXISTS (
+        SELECT 1
+        FROM technical_task tt
+        LEFT JOIN users u3 ON tt.assigned_to_technical = u3.user_id
+        WHERE tt.service_ticket_id = st.service_ticket_id
+          AND LOWER(u3.full_name) LIKE @keyword
+    )
+)");
+                parameters.Add("@keyword", $"%{filter.KeyWord.Trim().ToLower()}%");
+            }
             // Xử lý ColumnFilters
             if (filter.ColumnFilters != null && filter.ColumnFilters.Any())
             {
@@ -980,20 +1003,19 @@ namespace SWP.Infrastructure.Repositories
 
             // Build WHERE clause
             var whereClause = whereConditions.Any()
-                ? "WHERE " + string.Join(" AND ", whereConditions)
-                : "";
+    ? " AND " + string.Join(" AND ", whereConditions)
+    : "";
 
             // Count query
             var countSql = @"
-                           SELECT COUNT(DISTINCT st.service_ticket_id)
-    FROM service_ticket st
-    LEFT JOIN vehicle v ON st.vehicle_id = v.vehicle_id
-    LEFT JOIN customer c ON v.customer_id = c.customer_id
-    LEFT JOIN technical_task tt ON st.service_ticket_id = tt.service_ticket_id
-    WHERE c.customer_id = @CustomerId
-      AND st.is_deleted = 0
-      AND v.is_deleted = 0
-      AND c.is_deleted = 0
+SELECT COUNT(DISTINCT st.service_ticket_id)
+FROM service_ticket st
+LEFT JOIN vehicle v ON st.vehicle_id = v.vehicle_id
+LEFT JOIN customer c ON v.customer_id = c.customer_id
+WHERE c.customer_id = @CustomerId
+  AND st.is_deleted = 0
+  AND v.is_deleted = 0
+  AND c.is_deleted = 0
 " + whereClause;
 
             // Sort
@@ -1032,7 +1054,10 @@ namespace SWP.Infrastructure.Repositories
                  new { UserId = id }
             );
             parameters.Add("@CustomerId", customerId);
-            var total = await connection.ExecuteScalarAsync<int>(countSql, new { @CustomerId = customerId });
+            var total = await connection.ExecuteScalarAsync<int>(
+                     countSql,
+                     parameters
+            );
             var items = await connection.QueryAsync<ServiceTicketListItemDto>(dataSql, parameters);
 
             return new PagedResult<ServiceTicketListItemDto>
