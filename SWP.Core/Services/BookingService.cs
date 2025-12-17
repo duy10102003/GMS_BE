@@ -45,6 +45,7 @@ namespace SWP.Core.Services
                 request.CustomerId,
                 request.BookingTime,
                 request.VehicleName,
+                request.Reason,
                 request.Note);
         }
 
@@ -76,6 +77,7 @@ namespace SWP.Core.Services
                 customerId,
                 request.BookingTime,
                 normalizedVehicleName,
+                request.Reason,
                 request.Note);
         }
 
@@ -88,8 +90,9 @@ namespace SWP.Core.Services
             }
 
             ValidateUserBookingRequest(request, user);
+            var customer = await _customerRepo.GetByPhoneAsync(request.CustomerPhone);
 
-            var customer = await _customerRepo.GetByUserIdAsync(request.UserId);
+            //var customer = await _customerRepo.GetByUserIdAsync(request.UserId);
             if (customer == null)
             {
                 if (string.IsNullOrWhiteSpace(user.Phone))
@@ -100,9 +103,9 @@ namespace SWP.Core.Services
                 customer = new Customer
                 {
                     UserId = request.UserId,
-                    CustomerName = user.FullName?.Trim(),
-                    CustomerPhone = user.Phone.Trim(),
-                    CustomerEmail = user.Email?.Trim(),
+                    CustomerName = request.CustomerName?.Trim() ?? user.FullName?.Trim(),
+                    CustomerPhone = request.CustomerPhone.Trim(), // ✅ DÙNG PHONE TỪ REQUEST
+                    CustomerEmail = request.CustomerEmail?.Trim() ?? user.Email?.Trim(),
                     IsDeleted = 0
                 };
 
@@ -114,6 +117,7 @@ namespace SWP.Core.Services
                 customer.CustomerId,
                 request.BookingTime,
                 request.VehicleName?.Trim(),
+                request.Reason,
                 request.Note);
         }
 
@@ -130,6 +134,7 @@ namespace SWP.Core.Services
             existing.CustomerId = request.CustomerId;
             existing.BookingTime = request.BookingTime;
             existing.VehicleName = request.VehicleName?.Trim();
+            existing.Reason = request.Reason?.Trim();
             existing.Note = request.Note?.Trim();
             existing.ModifiedDate = DateTime.UtcNow;
 
@@ -150,6 +155,10 @@ namespace SWP.Core.Services
             }
 
             existing.BookingStatus = request.BookingStatus;
+            if (request.Reason != null)
+            {
+                existing.Reason = request.Reason.Trim();
+            }
             if (request.Note != null)
             {
                 existing.Note = request.Note.Trim();
@@ -178,13 +187,14 @@ namespace SWP.Core.Services
             }
         }
 
-        private async Task<int> CreateBookingInternal(int customerId, DateTime bookingTime, string? vehicleName, string? note)
+        private async Task<int> CreateBookingInternal(int customerId, DateTime bookingTime, string? vehicleName, string? reason, string? note)
         {
             var entity = new Booking
             {
                 CustomerId = customerId,
                 BookingTime = bookingTime,
                 VehicleName = vehicleName?.Trim(),
+                Reason = reason?.Trim(),
                 Note = note?.Trim(),
                 BookingStatus = BookingStatus.Pending,
                 CreatedDate = DateTime.UtcNow,

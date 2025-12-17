@@ -165,6 +165,7 @@ namespace SWP.Infrastructure.Repositories
                     b.booking_time AS BookingTime,
                     b.booking_status AS BookingStatus,
                     b.vehicle_name AS VehicleName,
+                    b.reason AS Reason,
                     c.customer_name AS CustomerName,
                     c.customer_phone AS CustomerPhone
                 {baseSelect}
@@ -194,6 +195,7 @@ namespace SWP.Infrastructure.Repositories
                     b.booking_time AS BookingTime,
                     b.booking_status AS BookingStatus,
                     b.vehicle_name AS VehicleName,
+                    b.reason AS Reason,
                     b.note AS Note,
                     b.customer_id AS CustomerId,
                     b.created_date AS CreatedDate,
@@ -215,6 +217,7 @@ namespace SWP.Infrastructure.Repositories
                 { "BookingTime", "b.booking_time" },
                 { "BookingStatus", "b.booking_status" },
                 { "VehicleName", "b.vehicle_name" },
+                { "Reason", "b.reason" },
                 { "CustomerName", "c.customer_name" },
                 { "CustomerPhone", "c.customer_phone" },
                 { "CustomerEmail", "c.customer_email" },
@@ -237,6 +240,7 @@ namespace SWP.Infrastructure.Repositories
                 { "BookingTime", "b.booking_time" },
                 { "BookingStatus", "b.booking_status" },
                 { "VehicleName", "b.vehicle_name" },
+                { "Reason", "b.reason" },
                 { "CustomerName", "c.customer_name" },
                 { "CustomerPhone", "c.customer_phone" },
                 { "CreatedDate", "b.created_date" },

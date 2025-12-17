@@ -468,5 +468,29 @@ namespace SWP.Infrastructure.Repositories
                 _ => string.Empty
             };
         }
+        public async Task<bool> ExistsByNameAsync(string name, int? excludeId = null)
+        {
+            const string sql = @"
+                SELECT 1
+                FROM mechanic_role
+                WHERE is_deleted = 0
+                AND LOWER(mechanic_role_name) = LOWER(@Name)
+                AND (@ExcludeId IS NULL OR mechanic_role_id != @ExcludeId)
+                LIMIT 1;
+            ";
+
+            using var connection = new MySqlConnection(_connection);
+
+            var result = await connection.QueryFirstOrDefaultAsync<int?>(
+                sql,
+                new
+                {
+                    Name = name.Trim(),
+                    ExcludeId = excludeId
+                }
+            );
+
+            return result.HasValue;
+        }        
     }
 }

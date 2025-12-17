@@ -14,6 +14,11 @@ namespace SWP.Core.Dtos.BookingDto
         public byte BookingStatus { get; set; }
 
         /// <summary>
+        /// Lý do thay đổi trạng thái (tùy chọn).
+        /// </summary>
+        public string? Reason { get; set; }
+
+        /// <summary>
         /// Ghi chú cho lần duyệt (tùy chọn).
         /// </summary>
         public string? Note { get; set; }

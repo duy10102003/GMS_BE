@@ -13,6 +13,12 @@ namespace SWP.Core.Dtos.InvoiceDto
         /// </summary>
         public int? CustomerId { get; set; }
 
+        ///// <summary>
+        ///// ID của User (liên kết qua Customer.UserId)
+        ///// Dùng cho trường hợp lấy danh sách hóa đơn theo tài khoản người dùng.
+        ///// </summary>
+        //public int? UserId { get; set; }
+
         /// <summary>
         /// Trạng thái hóa đơn
         /// </summary>

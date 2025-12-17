@@ -104,7 +104,6 @@ namespace SWP.Api.Controllers
                 pageSize = result.PageSize
             }, "Lay danh sach mechanic role co phan trang thanh cong"));
         }
-        //abcd
     }
 }
 

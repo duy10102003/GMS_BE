@@ -1,5 +1,6 @@
 using SWP.Core.Dtos;
 using SWP.Core.Dtos.BookingDto;
+using SWP.Core.Entities;
 
 namespace SWP.Core.Interfaces.Services
 {

@@ -20,6 +20,28 @@ namespace SWP.Infrastructure.Repositories
         {
             _connection = configuration.GetConnectionString("DefaultConnection");
         }
+        public async Task<Customer?> GetByPhoneAsync(string phone)
+        {
+            const string sql = @"
+                SELECT 
+                    customer_id   AS CustomerId,
+                    customer_name AS CustomerName,
+                    customer_phone AS CustomerPhone,
+                    customer_email AS CustomerEmail,
+                    user_id AS UserId,
+                    is_deleted AS IsDeleted
+                FROM customer
+                WHERE customer_phone = @Phone
+                AND is_deleted = 0
+                LIMIT 1;
+            ";
+
+            using var connection = new MySqlConnection(_connection);
+            return await connection.QueryFirstOrDefaultAsync<Customer>(
+                sql,
+                new { Phone = phone }
+            );
+        }
 
         /// <summary>
         /// Tìm kiếm Customer cho select (với search keyword)

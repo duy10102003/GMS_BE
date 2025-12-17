@@ -17,5 +17,7 @@ namespace SWP.Core.Interfaces.Repositories
         Task<int> UpdateRoleAsync(int mechanicRoleId, MechanicRoleUpdateDto request);
         Task<int> SoftDeleteRoleAsync(int mechanicRoleId);
         Task<MechanicRoleDto?> GetRoleByIdAsync(int mechanicRoleId);
+        Task<bool> ExistsByNameAsync(string name, int? excludeId = null);
+
     }
 }
