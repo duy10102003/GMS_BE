@@ -3,11 +3,13 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.8.34330.188
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SWP.Api", "SWP.Api\SWP.Api.csproj", "{6422150B-8CBC-4641-8B4E-305BB732B628}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SWP.Api", "SWP.Api\SWP.Api.csproj", "{6422150B-8CBC-4641-8B4E-305BB732B628}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SWP.Core", "SWP.Core\SWP.Core.csproj", "{EDB5C3C6-B841-4225-8EAD-CDBF3B4D4261}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SWP.Core", "SWP.Core\SWP.Core.csproj", "{EDB5C3C6-B841-4225-8EAD-CDBF3B4D4261}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SWP.Infrastructure", "SWP.Infrastructure\SWP.Infrastructure.csproj", "{A888C40F-2E1C-47A6-8ACE-0DF669244274}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SWP.Infrastructure", "SWP.Infrastructure\SWP.Infrastructure.csproj", "{A888C40F-2E1C-47A6-8ACE-0DF669244274}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SWP.Core.UnitTest", "SWP.Core.UnitTest\SWP.Core.UnitTest.csproj", "{AD51A848-7BDC-4700-A2A6-10E55BAE0ADE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,6 +29,10 @@ Global
 		{A888C40F-2E1C-47A6-8ACE-0DF669244274}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A888C40F-2E1C-47A6-8ACE-0DF669244274}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A888C40F-2E1C-47A6-8ACE-0DF669244274}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AD51A848-7BDC-4700-A2A6-10E55BAE0ADE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AD51A848-7BDC-4700-A2A6-10E55BAE0ADE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AD51A848-7BDC-4700-A2A6-10E55BAE0ADE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AD51A848-7BDC-4700-A2A6-10E55BAE0ADE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
