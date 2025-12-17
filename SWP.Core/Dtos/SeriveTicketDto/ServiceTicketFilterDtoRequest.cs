@@ -18,6 +18,12 @@ namespace SWP.Core.Dtos.SeriveTicketDto
         /// </summary>
         public int PageSize { get; set; } = 10;
 
+
+        /// <summary>
+        /// Key để search
+        /// </summary>
+        public string? KeyWord { get; set; }
+
         /// <summary>
         /// Danh sách filter theo cột
         /// </summary>

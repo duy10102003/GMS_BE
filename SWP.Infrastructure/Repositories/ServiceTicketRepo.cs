@@ -67,6 +67,12 @@ namespace SWP.Infrastructure.Repositories
                 LEFT JOIN users u1 ON st.created_by = u1.user_id
                 LEFT JOIN users u2 ON st.modified_by = u2.user_id";
 
+            // Giữ lại keyword để tương thích
+            if (!string.IsNullOrWhiteSpace(filter.KeyWord))
+            {
+                whereConditions.Add("(LOWER(st.service_ticket_code)) LIKE @keyword OR (LOWER(c.customer_name)) LIKE @keyword OR (LOWER(c.customer_phone)) LIKE @keyword ");
+                parameters.Add("@keyword", $"%{filter.KeyWord.Trim().ToLower()}%");
+            }
             // Xử lý ColumnFilters
             if (filter.ColumnFilters != null && filter.ColumnFilters.Any())
             {
@@ -910,6 +916,13 @@ namespace SWP.Infrastructure.Repositories
                                      AND v.is_deleted = 0
                                      AND c.is_deleted = 0";
 
+
+            // Giữ lại keyword để tương thích
+            if (!string.IsNullOrWhiteSpace(filter.KeyWord))
+            {
+                whereConditions.Add("(LOWER(st.service_ticket_code)) LIKE @keyword OR (LOWER(AssignedToTechnicalName)) LIKE @keyword");
+                parameters.Add("@keyword", $"%{filter.KeyWord.Trim().ToLower()}%");
+            }
             // Xử lý ColumnFilters
             if (filter.ColumnFilters != null && filter.ColumnFilters.Any())
             {

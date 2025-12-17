@@ -52,6 +52,12 @@ namespace SWP.Infrastructure.Repositories
                 LEFT JOIN `customer` c ON i.customer_id = c.customer_id
                 WHERE i.is_deleted = 0";
 
+            // Giữ lại keyword để tương thích
+            if (!string.IsNullOrWhiteSpace(filter.KeyWord))
+            {
+                whereConditions.Add("(LOWER(st.service_ticket_code)) LIKE @keyword");
+                parameters.Add("@keyword", $"%{filter.KeyWord.Trim().ToLower()}%");
+            }
             // Filter theo customer
             if (filter.CustomerId.HasValue)
             {
