@@ -16,5 +16,6 @@ namespace SWP.Core.Interfaces.Services
         Task<int> CreateRoleAsync(MechanicRoleCreateDto request);
         Task<int> UpdateRoleAsync(int mechanicRoleId, MechanicRoleUpdateDto request);
         Task<int> SoftDeleteRoleAsync(int mechanicRoleId);
+        //Task<bool> ExistsByNameAsync(string name, int? excludeId = null);
     }
 }

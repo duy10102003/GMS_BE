@@ -1,5 +1,6 @@
 using SWP.Core.Dtos;
 using SWP.Core.Dtos.MechanicRoleDto;
+using SWP.Core.Exceptions;
 using SWP.Core.Interfaces.Repositories;
 using SWP.Core.Interfaces.Services;
 
@@ -54,15 +55,46 @@ namespace SWP.Core.Services
             return _mechanicRoleRepo.GetRoleByIdAsync(mechanicRoleId);
         }
 
-        public Task<int> CreateRoleAsync(MechanicRoleCreateDto request)
+        public async Task<int> CreateRoleAsync(MechanicRoleCreateDto request)
         {
-            return _mechanicRoleRepo.CreateRoleAsync(request);
+            if (string.IsNullOrWhiteSpace(request.MechanicRoleName))
+            {
+                throw new ValidateException("Tên vai trò không được để trống");
+            }
+
+            var exists = await _mechanicRoleRepo.ExistsByNameAsync(
+                request.MechanicRoleName.Trim()
+            );
+
+            if (exists)
+            {
+                throw new ValidateException("Tên vai trò đã tồn tại");
+            }
+
+            return await _mechanicRoleRepo.CreateRoleAsync(request);
         }
 
-        public Task<int> UpdateRoleAsync(int mechanicRoleId, MechanicRoleUpdateDto request)
+
+        public async Task<int> UpdateRoleAsync(int mechanicRoleId, MechanicRoleUpdateDto request)
         {
-            return _mechanicRoleRepo.UpdateRoleAsync(mechanicRoleId, request);
+            if (string.IsNullOrWhiteSpace(request.MechanicRoleName))
+            {
+                throw new ValidateException("Tên vai trò không được để trống");
+            }
+
+            var exists = await _mechanicRoleRepo.ExistsByNameAsync(
+                request.MechanicRoleName.Trim(),
+                mechanicRoleId
+            );
+
+            if (exists)
+            {
+                throw new ValidateException("Tên vai trò đã tồn tại");
+            }
+
+            return await _mechanicRoleRepo.UpdateRoleAsync(mechanicRoleId, request);
         }
+
 
         public Task<int> SoftDeleteRoleAsync(int mechanicRoleId)
         {

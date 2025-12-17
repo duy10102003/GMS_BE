@@ -33,6 +33,11 @@ namespace SWP.Core.Interfaces.Repositories
         Task<Invoice?> GetByIdAsync(int invoiceId);
         Task MarkAsPaidAsync(int invoiceId);
         Task MarkAsFailedAsync(int invoiceId);
+
+        Task<PagedResult<InvoiceListItemDto>> GetPagingInvoiceForCustomerAsync(
+            int userId,
+            InvoiceFilterDtoRequest filter
+        );
     }
 }
 

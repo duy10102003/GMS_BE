@@ -29,6 +29,10 @@ namespace SWP.Core.Entities
         [Column("note")]
         public string? Note { get; set; }
 
+        [Column("reason")]
+        [MaxLength(255)]
+        public string? Reason { get; set; }
+
         // [Column("issue_picture")]
         // public string? IssuePicture { get; set; }
 
