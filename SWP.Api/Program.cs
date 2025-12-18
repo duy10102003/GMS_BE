@@ -29,6 +29,7 @@ builder.Services.AddScoped<IVehicleService, VehicleService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IMechanicRoleService, MechanicRoleService>();
 builder.Services.AddScoped<IWarrantyService, WarrantyService>();
+builder.Services.AddScoped<IMechanicReportService, MechanicReportService>();
 
 //Dang ky Repo
 builder.Services.AddScoped<IServiceTicketRepo, ServiceTicketRepo>();
@@ -43,6 +44,7 @@ builder.Services.AddScoped<IVehicleRepo, VehicleRepo>();
 builder.Services.AddScoped<IWarrantyRepo, WarrantyRepo>();
 builder.Services.AddScoped<IUserRepo, UserRepo>();
 builder.Services.AddScoped<IMechanicRoleRepo, MechanicRoleRepo>();
+builder.Services.AddScoped<IMechanicReportRepo, MechanicReportRepo>();
 builder.Services.AddScoped<IBaseRepo<User>, BaseRepo<User>>();
 builder.Services.AddScoped<IBaseRepo<Vehicle>, BaseRepo<Vehicle>>();
 builder.Services.AddScoped<IBaseRepo<Part>, BaseRepo<Part>>();
