@@ -1,10 +1,9 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using SWP.Core.Dtos.InvoiceDto;
 using SWP.Core.Dtos;
-using SWP.Core.Interfaces.Services;
-using SWP.Core.Services;
 using SWP.Core.Dtos.WarrantyDto;
+using SWP.Core.Entities;
+using SWP.Core.Interfaces.Services;
 
 namespace SWP.Api.Controllers
 {
@@ -18,7 +17,6 @@ namespace SWP.Api.Controllers
         {
             _warrantyService = warrantyService;
         }
-
 
         /// <summary>
         /// Lấy danh sách bảo hành có phân trang
@@ -44,6 +42,7 @@ namespace SWP.Api.Controllers
         /// <summary>
         /// Lấy danh sách bảo hành có phân trang của customer
         /// </summary>
+        /// <param name="id">ID user của customer</param>
         /// <param name="filter">Filter và phân trang</param>
         /// <returns>Danh sách bảo hành</returns>
         [HttpPost("{id}/customer/paging")]
@@ -62,5 +61,17 @@ namespace SWP.Api.Controllers
             ));
         }
 
+        /// <summary>
+        /// Lấy chi tiết một bảo hành theo ID
+        /// </summary>
+        /// <param name="id">ID của warranty</param>
+        /// <returns>Chi tiết bảo hành</returns>
+        [HttpGet("{id:int}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            var result = await _warrantyService.GetByIdAsync(id);
+            return Ok(ApiResponse<Warranty>.SuccessResponse(result, "Lấy chi tiết bảo hành thành công"));
+        }
     }
 }
+

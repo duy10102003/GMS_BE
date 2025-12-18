@@ -19,7 +19,7 @@ namespace SWP.Core.Dtos.WarrantyDto
         public string VehicleLicensePlate { get; set; } = string.Empty;
         public string CustomerName { get; set; } = string.Empty;
         public string CustomerPhone { get; set; } = string.Empty;
-
+        public string CustomerEmail { get; set; } = string.Empty;
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public byte? Status { get; set; }

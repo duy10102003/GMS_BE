@@ -68,7 +68,7 @@ namespace SWP.Infrastructure.Repositories
                 if (!details.Any())
                 {
                     await tran.CommitAsync();
-                    return ;
+                    return;
                 }
 
                 // 3. Insert warranty
@@ -136,14 +136,38 @@ namespace SWP.Infrastructure.Repositories
 
         public async Task<PagedResult<WarrantyListItemDto>> GetPagingAsync(WarrantyFilterDtoRequest filter)
         {
-           // await AutoUpdateExpiredAsync();
+            // await AutoUpdateExpiredAsync();
+
+
             var parameters = new DynamicParameters();
             var whereClause = BuildWhereClause(filter.ColumnFilters, parameters);
             var orderBy = BuildOrderByClause(filter.ColumnSorts);
-
+            // var whereCoditions = new List<string>();
             var offset = (filter.Page - 1) * filter.PageSize;
             parameters.Add("@Offset", offset);
             parameters.Add("@PageSize", filter.PageSize);
+            var whereConditions = new List<string>();
+
+            if (!string.IsNullOrWhiteSpace(whereClause))
+            {
+                whereConditions.Add(whereClause);
+            }
+
+            if (!string.IsNullOrWhiteSpace(filter.KeyWord))
+            {
+                whereConditions.Add(@"
+        AND (
+            LOWER(p.part_name) LIKE @keyword
+            OR LOWER(v.vehicle_license_plate) LIKE @keyword
+            OR LOWER(c.customer_phone) LIKE @keyword
+            OR LOWER(c.customer_name) LIKE @keyword
+        )
+    ");
+
+                parameters.Add("@keyword", $"%{filter.KeyWord.Trim().ToLower()}%");
+            }
+
+            var finalWhere = string.Join(" ", whereConditions);
 
             var baseFrom = @"
         FROM warranty w
@@ -154,25 +178,31 @@ namespace SWP.Infrastructure.Repositories
         INNER JOIN customer c ON v.customer_id = c.customer_id
         WHERE w.is_deleted = 0";
 
-            var countSql = $"SELECT COUNT(1) {baseFrom}{whereClause}";
+            var countSql = $@"
+    SELECT COUNT(1)
+    {baseFrom}
+    {finalWhere}
+";
 
-            var dataSql = $@"
-        SELECT 
-            w.warranty_id AS WarrantyId,
-            w.service_ticket_detail_id AS ServiceTicketDetailId,
-            p.part_name AS PartName,
-            p.part_code AS PartCode,
-            v.vehicle_license_plate AS VehicleLicensePlate,
-            c.customer_name AS CustomerName,
-            c.customer_phone AS CustomerPhone,
-            w.start_date AS StartDate,
-            w.end_date AS EndDate,
-            w.status AS Status
-        {baseFrom}
-        {whereClause}
-        {orderBy}
-        LIMIT @PageSize OFFSET @Offset
-            ";
+
+          var dataSql = $@"
+    SELECT 
+        w.warranty_id AS WarrantyId,
+        w.service_ticket_detail_id AS ServiceTicketDetailId,
+        p.part_name AS PartName,
+        p.part_code AS PartCode,
+        v.vehicle_license_plate AS VehicleLicensePlate,
+        c.customer_name AS CustomerName,
+        c.customer_phone AS CustomerPhone,
+        c.customer_email AS CustomerEmail,
+        w.start_date AS StartDate,
+        w.end_date AS EndDate,
+        w.status AS Status
+    {baseFrom}
+    {finalWhere}
+    {orderBy}
+    LIMIT @PageSize OFFSET @Offset
+";
 
             using var conn = new MySqlConnection(_connection);
 
@@ -308,7 +338,7 @@ namespace SWP.Infrastructure.Repositories
                 : " ORDER BY w.warranty_id DESC";
         }
 
-       
+
         #endregion
     }
 }

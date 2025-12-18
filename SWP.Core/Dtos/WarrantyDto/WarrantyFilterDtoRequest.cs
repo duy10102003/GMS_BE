@@ -18,6 +18,11 @@ namespace SWP.Core.Dtos.WarrantyDto
         /// </summary>
         public int PageSize { get; set; } = 10;
 
+         /// <summary>
+        /// Key word tìm kiếm
+        /// </summary>
+        public string? KeyWord { get; set; } 
+
         /// <summary>
         /// Danh sách filter theo cột
         /// </summary>
