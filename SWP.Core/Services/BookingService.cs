@@ -90,29 +90,8 @@ namespace SWP.Core.Services
             }
 
             ValidateUserBookingRequest(request, user);
-            var customer = await _customerRepo.GetByPhoneAsync(request.CustomerPhone);
-
-            //var customer = await _customerRepo.GetByUserIdAsync(request.UserId);
-            if (customer == null)
-            {
-                if (string.IsNullOrWhiteSpace(user.Phone))
-                {
-                    throw new ValidateException("User phone is required to create booking.");
-                }
-
-                customer = new Customer
-                {
-                    UserId = request.UserId,
-                    CustomerName = request.CustomerName?.Trim() ?? user.FullName?.Trim(),
-                    CustomerPhone = request.CustomerPhone.Trim(), // ✅ DÙNG PHONE TỪ REQUEST
-                    CustomerEmail = request.CustomerEmail?.Trim() ?? user.Email?.Trim(),
-                    IsDeleted = 0
-                };
-
-                var customerId = Convert.ToInt32(await _customerRepo.InsertAsync(customer));
-                customer.CustomerId = customerId;
-            }
-
+            var customer = await _customerRepo.GetByUserIdAsync(user.UserId);
+                
             return await CreateBookingInternal(
                 customer.CustomerId,
                 request.BookingTime,

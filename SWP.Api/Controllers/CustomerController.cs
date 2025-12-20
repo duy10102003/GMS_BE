@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using SWP.Core.Dtos;
 using SWP.Core.Dtos.CustomerDto;
+using SWP.Core.Entities;
 using SWP.Core.Interfaces.Services;
 
 namespace SWP.Api.Controllers
@@ -30,6 +32,22 @@ namespace SWP.Api.Controllers
         {
             var result = await _customerService.SearchForSelectAsync(request);
             return Ok(ApiResponse<List<CustomerSelectDto>>.SuccessResponse(result, "Tìm kiếm customer thành công"));
+        }
+
+        /// <summary>
+        /// Lay thong tin customer theo user dang dang nhap.
+        /// </summary>
+        [HttpGet("{userId}")]
+        public async Task<IActionResult> GetMyCustomer(int userId)
+        {
+
+            var customer = await _customerService.GetByUserIdAsync(userId);
+            if (customer == null)
+            {
+                return NotFound(ApiResponse<object>.ErrorResponse("Customer not found"));
+            }
+
+            return Ok(ApiResponse<Customer>.SuccessResponse(customer, "Lay thong tin customer thanh cong"));
         }
     }
 }

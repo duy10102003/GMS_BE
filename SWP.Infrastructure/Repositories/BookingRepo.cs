@@ -121,7 +121,7 @@ namespace SWP.Infrastructure.Repositories
                 ? "WHERE " + string.Join(" AND ", whereConditions)
                 : string.Empty;
 
-            var orderBy = "ORDER BY b.created_date DESC";
+            var orderBy = "ORDER BY b.booking_id DESC";
             if (filter.ColumnSorts != null && filter.ColumnSorts.Any())
             {
                 var sortParts = filter.ColumnSorts
