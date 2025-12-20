@@ -1,0 +1,1382 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manager Price Input UI</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f6f8fb;
+        }
+
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 260px;
+            height: 100vh;
+            background: #1e293b;
+            color: white;
+            z-index: 50;
+        }
+
+        .sidebar nav ul {
+            list-style: none;
+            padding: 2rem 0;
+        }
+
+        .sidebar nav li {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .sidebar nav li:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar nav li i {
+            margin-right: 0.75rem;
+        }
+
+        .header {
+            position: fixed;
+            top: 0;
+            left: 260px;
+            right: 0;
+            height: 70px;
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            z-index: 100;
+        }
+
+        .header h1 {
+            font-size: 1.25rem;
+            color: #1f2937;
+        }
+
+        .content-wrapper {
+            margin-left: 260px;
+            margin-top: 70px;
+            padding: 2rem;
+            min-height: calc(100vh - 70px);
+        }
+
+        .page-header {
+            margin-bottom: 2rem;
+        }
+
+        .page-subtitle {
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-size: 0.85rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .page-title {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .page-description {
+            color: #546372;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            border-radius: 16px;
+            padding: 1.25rem;
+            color: white;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        }
+
+        .stat-card.created {
+            background: linear-gradient(135deg, #f7971e, #ffd200);
+            color: #4a2a00;
+        }
+
+        .stat-card.priced {
+            background: linear-gradient(135deg, #43cea2, #185a9d);
+        }
+
+        .stat-card.confirmed {
+            background: linear-gradient(135deg, #f85032, #e73827);
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            opacity: 0.9;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 0.5rem 0;
+        }
+
+        .stat-meta {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .filters-card {
+            background: white;
+            border-radius: 18px;
+            padding: 1.25rem;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+            margin-bottom: 1.5rem;
+        }
+
+        .search-field {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            border: 2px solid #edf1f7;
+            border-radius: 12px;
+            background: #fdfefe;
+            margin-bottom: 1rem;
+        }
+
+        .search-field input {
+            border: none;
+            outline: none;
+            flex: 1;
+            background: transparent;
+            font-size: 1rem;
+        }
+
+        .status-tabs {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .status-tab {
+            border: none;
+            border-radius: 999px;
+            padding: 0.5rem 1rem;
+            background: #f3f4f6;
+            color: #4b5563;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .status-tab .badge {
+            background: white;
+            padding: 0.15rem 0.5rem;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .status-tab.active {
+            background: #1f7cff;
+            color: white;
+            box-shadow: 0 10px 24px rgba(31, 124, 255, 0.25);
+        }
+
+        .table-card {
+            background: white;
+            border-radius: 18px;
+            padding: 1.5rem;
+            box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
+        }
+
+        .table-header {
+            margin-bottom: 1rem;
+        }
+
+        .table-header h2 {
+            font-size: 1.25rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 0.75rem 0.5rem;
+            border-bottom: 1px solid #edf2f7;
+        }
+
+        th {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+
+        .status-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.35rem 0.8rem;
+            border-radius: 999px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .status-created {
+            background: rgba(255, 166, 0, 0.15);
+            color: #a65c00;
+        }
+
+        .status-priced {
+            background: rgba(16, 185, 129, 0.15);
+            color: #047857;
+        }
+
+        .status-confirmed {
+            background: rgba(248, 80, 50, 0.15);
+            color: #c81912;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .action-button {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .action-button.pricing {
+            background: #10b981;
+            color: white;
+        }
+
+        .action-button.pricing:hover {
+            background: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+        }
+
+        .action-button.confirm {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .action-button.confirm:hover {
+            background: #d97706;
+            transform: translateY(-2px);
+        }
+
+        .action-button:not(.pricing):not(.confirm) {
+            background: #eef2ff;
+            color: #4c1d95;
+        }
+
+        .action-button:not(.pricing):not(.confirm):hover {
+            background: #c7d2fe;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            padding: 0;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 1200px;
+            max-height: 90vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+            background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: #1f2937;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 2rem;
+            cursor: pointer;
+            color: #6b7280;
+            width: 2.5rem;
+            height: 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s;
+        }
+
+        .close-btn:hover {
+            background: #ef4444;
+            color: white;
+        }
+
+        .modal-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+        }
+
+        /* Modal Detail Styles */
+        .detail-container {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        @media (max-width: 992px) {
+            .detail-container {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+        }
+
+        .detail-info-card {
+            background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid #e2e8f0;
+        }
+
+        .detail-info-card h3 {
+            font-size: 1.25rem;
+            margin-bottom: 1.25rem;
+            color: #1f2937;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #4b5563;
+            min-width: 140px;
+        }
+
+        .info-value {
+            color: #1f2937;
+            text-align: right;
+            font-weight: 500;
+            word-break: break-word;
+            max-width: 200px;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.35rem 0.8rem;
+            border-radius: 999px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .detail-items-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .detail-items-card h3 {
+            font-size: 1.25rem;
+            margin-bottom: 1.25rem;
+            color: #1f2937;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .detail-table-wrapper {
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .detail-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .detail-table thead {
+            background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+            position: sticky;
+            top: 0;
+        }
+
+        .detail-table th {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: #4b5563;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .detail-table td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #f1f5f9;
+            color: #374151;
+        }
+
+        .detail-table tbody tr:hover {
+            background-color: #f9fafb;
+        }
+
+        .detail-table .text-right {
+            text-align: right;
+        }
+
+        .profit-positive {
+            color: #059669;
+            font-weight: 600;
+        }
+
+        .profit-negative {
+            color: #dc2626;
+            font-weight: 600;
+        }
+
+        .detail-totals {
+            display: flex;
+            justify-content: flex-end;
+            gap: 2rem;
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 2px solid #e2e8f0;
+        }
+
+        .total-box {
+            text-align: right;
+            min-width: 180px;
+        }
+
+        .total-label {
+            font-size: 0.85rem;
+            color: #6b7280;
+            margin-bottom: 0.25rem;
+        }
+
+        .total-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #6b7280, #4b5563);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(107, 114, 128, 0.3);
+        }
+
+        /* Thêm các style cho modal detail */
+        .copy-all-section {
+            background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .copy-all-section label {
+            font-weight: 600;
+            color: #374151;
+            white-space: nowrap;
+        }
+
+        .copy-all-input {
+            flex: 1;
+            max-width: 250px;
+            padding: 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 0.95rem;
+        }
+
+        .copy-all-btn {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            border: none;
+            padding: 0.5rem 1.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .copy-all-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+        }
+
+        .pricing-table-wrapper {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            overflow: auto;
+            max-height: 50vh;
+            background: white;
+        }
+
+        .pricing-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .pricing-table thead {
+            position: sticky;
+            top: 0;
+            background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+            z-index: 10;
+        }
+
+        .pricing-table th,
+        .pricing-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .pricing-table th {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #64748b;
+        }
+
+        .price-input {
+            width: 120px;
+            padding: 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            transition: border-color 0.2s ease;
+        }
+
+        .price-input:focus {
+            border-color: #3b82f6;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .pricing-table tfoot {
+            background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+            font-weight: 700;
+        }
+
+        .pricing-table tfoot td {
+            border-top: 2px solid #e2e8f0;
+        }
+
+        .profit-cell {
+            color: #059669;
+            font-weight: 600;
+        }
+
+        .dialog-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .btn-primary,
+        .btn-outline {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            border: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #1f7cff, #1e40af);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(31, 124, 255, 0.3);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: #4b5563;
+            border: 1px solid #d1d5db;
+        }
+
+        .btn-outline:hover {
+            border-color: #4f46e5;
+            color: #4f46e5;
+        }
+    </style>
+</head>
+
+<body>
+    <aside class="sidebar">
+        <nav>
+            <ul>
+                <li><i class="fas fa-home"></i> Dashboard</li>
+                <li><i class="fas fa-tag"></i> Price Requests</li>
+                <li><i class="fas fa-user-cog"></i> Manager Tools</li>
+            </ul>
+        </nav>
+    </aside>
+
+    <header class="header">
+        <h1>Manager - Nhập giá bán</h1>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <i class="fas fa-bell"></i>
+            <button style="background: none; border: none; cursor: pointer;"><i class="fas fa-user"></i></button>
+        </div>
+    </header>
+
+    <div class="content-wrapper">
+        <div class="page-header">
+            <p class="page-subtitle">Manager Panel</p>
+            <h1 class="page-title">Danh sách yêu cầu giá bán</h1>
+            <p class="page-description">Xem và xử lý yêu cầu từ stocker, nhập giá bán đề xuất</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card created">
+                <div class="stat-label">Chờ định giá</div>
+                <div class="stat-value">2</div>
+                <div class="stat-meta">
+                    <i class="fas fa-clock"></i>
+                    <span>CREATED</span>
+                </div>
+            </div>
+            <div class="stat-card priced">
+                <div class="stat-label">Đã định giá từng phần</div>
+                <div class="stat-value">1</div>
+                <div class="stat-meta">
+                    <i class="fas fa-save"></i>
+                    <span>PRICED</span>
+                </div>
+            </div>
+            <div class="stat-card confirmed">
+                <div class="stat-label">Chờ đóng toàn bộ</div>
+                <div class="stat-value">1</div>
+                <div class="stat-meta">
+                    <i class="fas fa-check"></i>
+                    <span>CONFIRMED</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="filters-card">
+            <div class="search-field">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="Tìm theo mã yêu cầu..." oninput="filterRequests()">
+            </div>
+            <div class="status-tabs">
+                <button class="status-tab active" data-status="all" onclick="filterByStatus('all', event)">
+                    Tất cả <span class="badge">4</span>
+                </button>
+                <button class="status-tab" data-status="CREATED" onclick="filterByStatus('CREATED', event)">
+                    Chờ định giá <span class="badge">2</span>
+                </button>
+                <button class="status-tab" data-status="PRICED" onclick="filterByStatus('PRICED', event)">
+                    Đã định giá <span class="badge">1</span>
+                </button>
+                <button class="status-tab" data-status="CONFIRMED" onclick="filterByStatus('CONFIRMED', event)">
+                    Chờ đóng <span class="badge">1</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="table-card">
+            <div class="table-header">
+                <h2>Danh sách yêu cầu</h2>
+                <p id="request-count">4 yêu cầu phù hợp</p>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Mã yêu cầu</th>
+                            <th>Người tạo</th>
+                            <th>Số dòng</th>
+                            <th>Ngày tạo</th>
+                            <th>Trạng thái</th>
+                            <th>Tổng giá trị</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody id="request-tbody">
+                        <!-- Dữ liệu sẽ được render bằng JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pricing Modal -->
+    <div id="pricing-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Nhập giá bán cho <span id="modal-request-code"></span></h2>
+                <button class="close-btn" onclick="closeModal('pricing-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="copy-all-section">
+                    <label>Copy all giá bán:</label>
+                    <input type="number" class="copy-all-input" id="copy-all-price"
+                        placeholder="Nhập giá (VD: 100000)" />
+                    <button class="copy-all-btn" onclick="copyAllPrices()">Áp dụng tất cả</button>
+                </div>
+                <div class="pricing-table-wrapper">
+                    <table class="pricing-table">
+                        <thead>
+                            <tr>
+                                <th>Mã PT</th>
+                                <th>Tên</th>
+                                <th>Số lượng</th>
+                                <th>Giá mua (old_price)</th>
+                                <th>Giá bán đề xuất (new_price)</th>
+                                <th>Thành tiền (SL * New Price)</th>
+                                <th>Lợi nhuận (Profit)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pricing-items-tbody"></tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="5" style="text-align: right;">Tổng Cộng (Bán):</td>
+                                <td id="pricing-total-amount">0 ₫</td>
+                                <td id="pricing-total-profit">0 ₫</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <div class="dialog-actions">
+                    <button class="btn-outline" onclick="closeModal('pricing-modal')">Hủy</button>
+                    <button class="btn-primary" onclick="saveAllPricing()">Lưu toàn bộ (Chuyển sang PRICED)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detail Modal -->
+    <div id="detail-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Chi tiết yêu cầu <span id="detail-request-code"></span></h2>
+                <button class="close-btn" onclick="closeModal('detail-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="detail-container">
+                    <div class="detail-info-card">
+                        <h3><i class="fas fa-info-circle"></i> Thông tin chung</h3>
+                        <div class="info-row">
+                            <span class="info-label">Mã yêu cầu:</span>
+                            <span class="info-value" id="detail-code"></span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Người tạo:</span>
+                            <span class="info-value" id="detail-requested-by"></span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Ngày tạo:</span>
+                            <span class="info-value" id="detail-date"></span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Trạng thái:</span>
+                            <span class="info-value" id="detail-status"></span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Số mặt hàng:</span>
+                            <span class="info-value" id="detail-lines"></span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Người xác nhận:</span>
+                            <span class="info-value" id="detail-confirmed-by">Chưa có</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Ngày xác nhận:</span>
+                            <span class="info-value" id="detail-confirmed-date">Chưa có</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Ghi chú:</span>
+                            <span class="info-value" id="detail-note">Không có ghi chú</span>
+                        </div>
+                    </div>
+
+                    <div class="detail-items-card">
+                        <h3><i class="fas fa-list-ul"></i> Danh sách mặt hàng</h3>
+                        <div class="detail-table-wrapper">
+                            <table class="detail-table">
+                                <thead>
+                                    <tr>
+                                        <th>Mã PT</th>
+                                        <th>Tên mặt hàng</th>
+                                        <th class="text-right">Số lượng</th>
+                                        <th class="text-right">Giá mua</th>
+                                        <th class="text-right">Giá bán</th>
+                                        <th class="text-right">Thành tiền</th>
+                                        <th class="text-right">Lợi nhuận</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="detail-items-tbody">
+                                    <!-- Items will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="detail-totals">
+                            <div class="total-box">
+                                <div class="total-label">Tổng giá mua</div>
+                                <div class="total-value" id="detail-total-old">0 ₫</div>
+                            </div>
+                            <div class="total-box">
+                                <div class="total-label">Tổng giá bán</div>
+                                <div class="total-value" id="detail-total-new">0 ₫</div>
+                            </div>
+                            <div class="total-box">
+                                <div class="total-label">Tổng lợi nhuận</div>
+                                <div class="total-value" id="detail-total-profit">0 ₫</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="btn-secondary" onclick="closeModal('detail-modal')">
+                        <i class="fas fa-times"></i> Đóng
+                    </button>
+                    <button class="btn-primary" onclick="openPricingFromDetail()">
+                        <i class="fas fa-edit"></i> Chỉnh sửa giá
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let requests = [
+            {
+                index: 0,
+                code: 'PR-2024-108',
+                requestedBy: 'Nguyễn Văn A',
+                lines: 3,
+                requestDate: '05/12/2024',
+                status: 'CREATED',
+                totalAmount: 0,
+                note: 'Yêu cầu cần định giá gấp cho đơn hàng lớn',
+                confirmedBy: null,
+                confirmedDate: null,
+                items: [
+                    { partId: 1, code: 'PT-001', name: 'Brake Pad Set', quantity: 5, oldPrice: 450000, newPrice: 0 },
+                    { partId: 2, code: 'PT-002', name: 'Engine Oil Filter', quantity: 10, oldPrice: 135000, newPrice: 0 },
+                    { partId: 3, code: 'PT-003', name: 'Spark Plug', quantity: 20, oldPrice: 72000, newPrice: 0 }
+                ]
+            },
+            {
+                index: 1,
+                code: 'PR-2024-104',
+                requestedBy: 'Trần Thị B',
+                lines: 2,
+                requestDate: '03/12/2024',
+                status: 'PRICED',
+                totalAmount: 1760000,
+                note: 'Đã kiểm tra kỹ chất lượng sản phẩm',
+                confirmedBy: null,
+                confirmedDate: null,
+                items: [
+                    { partId: 4, code: 'PT-004', name: 'Air Filter', quantity: 8, oldPrice: 180000, newPrice: 220000 },
+                    { partId: 5, code: 'PT-005', name: 'Tire Valve', quantity: 50, oldPrice: 45000, newPrice: 55000 }
+                ]
+            },
+            {
+                index: 2,
+                code: 'PR-2024-098',
+                requestedBy: 'Phạm Văn D',
+                lines: 1,
+                requestDate: '02/12/2024',
+                status: 'CONFIRMED',
+                totalAmount: 1100000,
+                note: 'Đã confirm với bộ phận kinh doanh',
+                confirmedBy: 'Manager X',
+                confirmedDate: '04/12/2024',
+                items: [
+                    { partId: 6, code: 'PT-006', name: 'Battery Terminal', quantity: 10, oldPrice: 108000, newPrice: 132000 }
+                ]
+            },
+            {
+                index: 3,
+                code: 'PR-2024-109',
+                requestedBy: 'Lê Thị C',
+                lines: 4,
+                requestDate: '06/12/2024',
+                status: 'CREATED',
+                totalAmount: 0,
+                note: 'Hàng mới nhập, cần định giá trước khi bán',
+                confirmedBy: null,
+                confirmedDate: null,
+                items: [
+                    { partId: 7, code: 'PT-007', name: 'Oil Filter', quantity: 15, oldPrice: 120000, newPrice: 0 },
+                    { partId: 8, code: 'PT-008', name: 'Brake Disc', quantity: 2, oldPrice: 850000, newPrice: 0 },
+                    { partId: 9, code: 'PT-009', name: 'Wiper Blade', quantity: 30, oldPrice: 45000, newPrice: 0 },
+                    { partId: 10, code: 'PT-010', name: 'Headlight Bulb', quantity: 5, oldPrice: 200000, newPrice: 0 }
+                ]
+            }
+        ];
+
+        let filteredRequests = [...requests];
+        let currentPricingIndex = -1;
+        let currentDetailIndex = -1;
+
+        const formatCurrency = (num) => (num || 0).toLocaleString('vi-VN') + ' ₫';
+
+        function renderRequestsTable() {
+            const tbody = document.getElementById('request-tbody');
+            updateStatCards();
+
+            document.getElementById('request-count').textContent = `${filteredRequests.length} yêu cầu phù hợp`;
+
+            tbody.innerHTML = filteredRequests.map((r) => {
+                const statusClass = `status-${r.status.toLowerCase()}`;
+                const statusText = { CREATED: 'Chờ định giá', PRICED: 'Đã định giá', CONFIRMED: 'Chờ đóng' }[r.status];
+                const icon = { CREATED: 'fa-clock', PRICED: 'fa-save', CONFIRMED: 'fa-check' }[r.status];
+
+                const total = r.items.reduce((sum, i) => sum + (i.newPrice * i.quantity), 0);
+                r.totalAmount = total;
+
+                return `
+                    <tr>
+                        <td><strong>${r.code}</strong></td>
+                        <td>${r.requestedBy}</td>
+                        <td>${r.lines} mặt hàng</td>
+                        <td>${r.requestDate}</td>
+                        <td>
+                            <span class="status-chip ${statusClass}">
+                                <i class="fas ${icon}"></i>
+                                ${statusText}
+                            </span>
+                        </td>
+                        <td>${formatCurrency(total)}</td>
+                        <td>
+                            <div class="action-buttons">
+                                ${r.status === 'CREATED' || r.status === 'PRICED' ? `
+                                    <button type="button" class="action-button pricing" title="Nhập/Sửa giá" onclick="openPricingModal(${r.index})">
+                                        <i class="fas fa-calculator"></i>
+                                    </button>
+                                ` : ''}
+                                ${r.status === 'PRICED' ? `
+                                    <button type="button" class="action-button confirm" title="Confirm toàn bộ" onclick="confirmAll(${r.index})">
+                                        <i class="fas fa-check-double"></i>
+                                    </button>
+                                ` : ''}
+                                <button type="button" class="action-button" title="Xem chi tiết" onclick="openDetailModal(${r.index})">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function updateStatCards() {
+            const counts = requests.reduce((acc, r) => {
+                acc[r.status] = (acc[r.status] || 0) + 1;
+                return acc;
+            }, { CREATED: 0, PRICED: 0, CONFIRMED: 0 });
+
+            document.querySelector('.stat-card.created .stat-value').textContent = counts.CREATED;
+            document.querySelector('.stat-card.priced .stat-value').textContent = counts.PRICED;
+            document.querySelector('.stat-card.confirmed .stat-value').textContent = counts.CONFIRMED;
+
+            const total = requests.length;
+            document.querySelector('.status-tabs button[data-status="all"] .badge').textContent = total;
+            document.querySelector('.status-tabs button[data-status="CREATED"] .badge').textContent = counts.CREATED;
+            document.querySelector('.status-tabs button[data-status="PRICED"] .badge').textContent = counts.PRICED;
+            document.querySelector('.status-tabs button[data-status="CONFIRMED"] .badge').textContent = counts.CONFIRMED;
+        }
+
+        function filterRequests() {
+            const search = document.querySelector('.search-field input').value.toLowerCase();
+            const activeStatus = document.querySelector('.status-tab.active')?.dataset.status || 'all';
+
+            filteredRequests = requests.filter(r => {
+                const matchesSearch = r.code.toLowerCase().includes(search) || r.requestedBy.toLowerCase().includes(search);
+                const matchesStatus = activeStatus === 'all' || r.status === activeStatus;
+                return matchesSearch && matchesStatus;
+            });
+            renderRequestsTable();
+        }
+
+        function filterByStatus(status, event) {
+            document.querySelector('.search-field input').value = '';
+
+            if (status === 'all') {
+                filteredRequests = [...requests];
+            } else {
+                filteredRequests = requests.filter(r => r.status === status);
+            }
+
+            document.querySelectorAll('.status-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.currentTarget.classList.add('active');
+
+            renderRequestsTable();
+        }
+
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.remove('show');
+            document.body.style.overflow = '';
+        }
+
+        function openDetailModal(index) {
+            currentDetailIndex = index;
+            const r = requests[index];
+
+            // Cập nhật thông tin chung
+            document.getElementById('detail-request-code').textContent = r.code;
+            document.getElementById('detail-code').textContent = r.code;
+            document.getElementById('detail-requested-by').textContent = r.requestedBy;
+            document.getElementById('detail-date').textContent = r.requestDate;
+            document.getElementById('detail-lines').textContent = `${r.lines} mặt hàng`;
+            document.getElementById('detail-note').textContent = r.note || 'Không có ghi chú';
+
+            // Cập nhật thông tin xác nhận
+            document.getElementById('detail-confirmed-by').textContent = r.confirmedBy || 'Chưa có';
+            document.getElementById('detail-confirmed-date').textContent = r.confirmedDate || 'Chưa có';
+
+            // Cập nhật trạng thái với badge
+            const statusText = { CREATED: 'Chờ định giá', PRICED: 'Đã định giá', CONFIRMED: 'Chờ đóng' }[r.status];
+            const statusColor = {
+                CREATED: '#a65c00',
+                PRICED: '#047857',
+                CONFIRMED: '#c81912'
+            }[r.status];
+
+            document.getElementById('detail-status').innerHTML = `
+                <span class="status-badge" style="background: ${statusColor}15; color: ${statusColor};">
+                    <i class="fas ${r.status === 'CREATED' ? 'fa-clock' : r.status === 'PRICED' ? 'fa-save' : 'fa-check'}"></i>
+                    ${statusText}
+                </span>
+            `;
+
+            // Render danh sách items
+            const tbody = document.getElementById('detail-items-tbody');
+            let totalOld = 0;
+            let totalNew = 0;
+            let totalProfit = 0;
+
+            tbody.innerHTML = r.items.map((item) => {
+                const itemTotalOld = item.oldPrice * item.quantity;
+                const itemTotalNew = item.newPrice * item.quantity;
+                const itemProfit = (item.newPrice - item.oldPrice) * item.quantity;
+
+                totalOld += itemTotalOld;
+                totalNew += itemTotalNew;
+                totalProfit += itemProfit;
+
+                return `
+                    <tr>
+                        <td><strong>${item.code}</strong></td>
+                        <td>${item.name}</td>
+                        <td class="text-right">${item.quantity}</td>
+                        <td class="text-right">${formatCurrency(item.oldPrice)}</td>
+                        <td class="text-right">${formatCurrency(item.newPrice)}</td>
+                        <td class="text-right">${formatCurrency(itemTotalNew)}</td>
+                        <td class="text-right ${itemProfit >= 0 ? 'profit-positive' : 'profit-negative'}">
+                            ${itemProfit >= 0 ? '+' : ''}${formatCurrency(itemProfit)}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            // Cập nhật tổng
+            document.getElementById('detail-total-old').textContent = formatCurrency(totalOld);
+            document.getElementById('detail-total-new').textContent = formatCurrency(totalNew);
+            document.getElementById('detail-total-profit').textContent = formatCurrency(totalProfit);
+
+            openModal('detail-modal');
+        }
+
+        function openPricingFromDetail() {
+            if (currentDetailIndex !== -1) {
+                closeModal('detail-modal');
+                openPricingModal(currentDetailIndex);
+            }
+        }
+
+        function openPricingModal(index) {
+            currentPricingIndex = index;
+            const r = requests[index];
+            document.getElementById('modal-request-code').textContent = r.code;
+
+            const tbody = document.getElementById('pricing-items-tbody');
+
+            const rowsHtml = r.items.map((item) => {
+                const totalItem = item.newPrice * item.quantity;
+                const profit = (item.newPrice - item.oldPrice) * item.quantity;
+
+                return `
+                    <tr>
+                        <td>${item.code}</td>
+                        <td>${item.name}</td>
+                        <td>${item.quantity}</td>
+                        <td>${formatCurrency(item.oldPrice)}</td>
+                        <td>
+                            <input type="number" 
+                                   class="price-input" 
+                                   data-part-id="${item.partId}" 
+                                   value="${item.newPrice || ''}" 
+                                   placeholder="Nhập giá bán" 
+                                   oninput="updateItemPrice(${index}, ${item.partId}, this.value)" />
+                        </td>
+                        <td id="item-total-${item.partId}">${formatCurrency(totalItem)}</td>
+                        <td class="profit-cell" id="item-profit-${item.partId}">${formatCurrency(profit)}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            tbody.innerHTML = rowsHtml;
+
+            document.getElementById('copy-all-price').value = '';
+            updatePricingTotals();
+            openModal('pricing-modal');
+        }
+
+        function updateItemPrice(reqIndex, partId, newPrice) {
+            const r = requests[reqIndex];
+            const item = r.items.find(i => i.partId === partId);
+
+            if (item) {
+                const price = Math.max(0, parseFloat(newPrice) || 0);
+                item.newPrice = price;
+
+                const totalItem = price * item.quantity;
+                const profit = (price - item.oldPrice) * item.quantity;
+
+                document.getElementById(`item-total-${partId}`).textContent = formatCurrency(totalItem);
+
+                const profitCell = document.getElementById(`item-profit-${partId}`);
+                profitCell.textContent = formatCurrency(profit);
+                profitCell.style.color = profit < 0 ? 'red' : (profit > 0 ? 'green' : 'inherit');
+
+                updatePricingTotals();
+            }
+        }
+
+        function copyAllPrices() {
+            const priceInput = document.getElementById('copy-all-price');
+            const price = parseFloat(priceInput.value);
+
+            if (!price || price <= 0 || currentPricingIndex === -1) {
+                alert('Vui lòng nhập một giá bán hợp lệ (> 0) trước!');
+                priceInput.focus();
+                return;
+            }
+
+            const r = requests[currentPricingIndex];
+            r.items.forEach(item => {
+                const inputElement = document.querySelector(`#pricing-items-tbody input[data-part-id="${item.partId}"]`);
+                if (inputElement) {
+                    inputElement.value = price;
+                    updateItemPrice(currentPricingIndex, item.partId, price);
+                }
+            });
+            alert(`Đã copy giá ${formatCurrency(price)} cho tất cả ${r.lines} parts!`);
+        }
+
+        function updatePricingTotals() {
+            if (currentPricingIndex === -1) return;
+            const r = requests[currentPricingIndex];
+
+            const totalAmount = r.items.reduce((sum, i) => sum + (i.newPrice * i.quantity), 0);
+            const totalProfit = r.items.reduce((sum, i) => sum + ((i.newPrice - i.oldPrice) * i.quantity), 0);
+
+            document.getElementById('pricing-total-amount').textContent = formatCurrency(totalAmount);
+            document.getElementById('pricing-total-profit').textContent = formatCurrency(totalProfit);
+
+            r.totalAmount = totalAmount;
+        }
+
+        function saveAllPricing() {
+            if (currentPricingIndex === -1) return;
+            const r = requests[currentPricingIndex];
+
+            const unpricedItems = r.items.filter(i => i.newPrice <= 0);
+            if (unpricedItems.length > 0) {
+                alert(`Vui lòng nhập giá bán (> 0) cho tất cả ${unpricedItems.length} parts còn lại trước khi lưu!`);
+                return;
+            }
+
+            r.status = 'PRICED';
+            closeModal('pricing-modal');
+            renderRequestsTable();
+            alert(`Đã lưu toàn bộ định giá cho ${r.code}! Trạng thái: PRICED. Manager có thể nhấn nút "Confirm" để hoàn tất.`);
+        }
+
+        function confirmAll(index) {
+            const r = requests[index];
+            if (r.status !== 'PRICED') {
+                alert('Không thể xác nhận (Confirm). Yêu cầu phải ở trạng thái "Đã định giá" (PRICED) trước.');
+                return;
+            }
+            if (confirm(`Confirm toàn bộ phiếu ${r.code} này để stocker có thể close?`)) {
+                r.status = 'CONFIRMED';
+                r.confirmedBy = 'Manager X';
+                r.confirmedDate = new Date().toLocaleDateString('vi-VN');
+                renderRequestsTable();
+                alert(`Đã chuyển yêu cầu ${r.code} sang trạng thái CHỜ ĐÓNG. Stocker có thể đóng phiếu.`);
+            }
+        }
+
+        // Khởi tạo dữ liệu khi trang load
+        document.addEventListener('DOMContentLoaded', () => {
+            renderRequestsTable();
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,1806 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Price Request Management UI</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .restock-requests-view {
+            display: flex;
+            min-height: 100vh;
+            background: #f6f8fb;
+        }
+
+        .content-wrapper {
+            flex: 1;
+            transition: margin-left 0.3s ease;
+            margin-left: 260px;
+        }
+
+        .main-content {
+            padding: 2rem;
+            flex: 1;
+            margin-top: 70px;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .page-subtitle {
+            color: #6c757d;
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-size: 0.85rem;
+        }
+
+        .page-title {
+            margin: 0.25rem 0;
+            font-size: 2rem;
+        }
+
+        .page-description {
+            margin: 0;
+            color: #546372;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            border-radius: 16px;
+            padding: 1.25rem;
+            color: white;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        }
+
+        .stat-card.created {
+            background: linear-gradient(135deg, #f7971e, #ffd200);
+            color: #4a2a00;
+        }
+
+        .stat-card.priced {
+            background: linear-gradient(135deg, #43cea2, #185a9d);
+        }
+
+        .stat-card.confirmed {
+            background: linear-gradient(135deg, #f85032, #e73827);
+            color: #fff8f5;
+        }
+
+        .stat-card.closed {
+            background: linear-gradient(135deg, #232526, #414345);
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            opacity: 0.8;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 0.5rem 0;
+        }
+
+        .stat-meta {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .filters-card {
+            background: white;
+            border-radius: 18px;
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+            margin-bottom: 1.5rem;
+        }
+
+        .search-field {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            border: 2px solid #edf1f7;
+            border-radius: 12px;
+            background: #fdfefe;
+        }
+
+        .search-field input {
+            border: none;
+            outline: none;
+            flex: 1;
+            background: transparent;
+            font-size: 1rem;
+        }
+
+        .status-tabs {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .status-tab {
+            border: none;
+            border-radius: 999px;
+            padding: 0.5rem 1rem;
+            background: #f3f4f6;
+            color: #4b5563;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .status-tab .badge {
+            background: white;
+            padding: 0.15rem 0.5rem;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .status-tab.active {
+            background: #1f7cff;
+            color: white;
+            box-shadow: 0 10px 24px rgba(31, 124, 255, 0.25);
+        }
+
+        .table-card {
+            background: white;
+            border-radius: 18px;
+            padding: 1.5rem;
+            box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
+            margin-bottom: 1.5rem;
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .filter-btn {
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            color: #94a3b8;
+            margin-left: 0.3rem;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 0.75rem 0.5rem;
+            border-bottom: 1px solid #edf2f7;
+        }
+
+        th {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #94a3b8;
+        }
+
+        .muted {
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        .status-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.35rem 0.8rem;
+            border-radius: 999px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .status-created {
+            background: rgba(255, 166, 0, 0.15);
+            color: #a65c00;
+        }
+
+        .status-priced {
+            background: rgba(16, 185, 129, 0.15);
+            color: #047857;
+        }
+
+        .status-confirmed {
+            background: rgba(248, 80, 50, 0.15);
+            color: #c81912;
+        }
+
+        .status-closed {
+            background: rgba(99, 102, 241, 0.15);
+            color: #4338ca;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .action-button {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            border: none;
+            background: #eef2ff;
+            color: #4c1d95;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .action-button:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .action-button:not(:disabled):hover {
+            background: #c7d2fe;
+        }
+
+        .timeline-card {
+            background: #0f172a;
+            color: white;
+            border-radius: 18px;
+            padding: 1.5rem;
+            box-shadow: 0 20px 40px rgba(15, 23, 42, 0.35);
+        }
+
+        .timeline-header h2 {
+            margin: 0;
+        }
+
+        .timeline-header p {
+            margin: 0.25rem 0 1rem;
+            color: rgba(255, 255, 255, 0.65);
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: 1.5rem;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 18px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .timeline-item {
+            position: relative;
+            padding-left: 1.5rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .timeline-dot {
+            position: absolute;
+            left: -11px;
+            top: 4px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #38bdf8;
+            box-shadow: 0 0 0 6px rgba(56, 189, 248, 0.2);
+        }
+
+        .timeline-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.95rem;
+        }
+
+        .timeline-time {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.85rem;
+        }
+
+        .timeline-text {
+            margin: 0.25rem 0 0;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .part-selection-dialog {
+            max-height: 70vh;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .part-selection-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            align-items: flex-start;
+        }
+
+        .part-search-input {
+            min-width: 280px;
+            padding: 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+        }
+
+        .part-selection-body {
+            flex: 1;
+            border: 1px solid #edf2f7;
+            border-radius: 16px;
+            overflow: hidden;
+            background: #fff;
+            display: flex;
+            gap: 1rem;
+            padding: 1rem;
+        }
+
+        .left-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .part-table-wrapper {
+            flex: 1;
+            overflow-x: auto;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            padding-bottom: 0.5rem;
+            max-height: 55vh;
+        }
+
+        .part-table {
+            flex: 1;
+            overflow: auto;
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 720px;
+        }
+
+        .part-table th,
+        .part-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid #edf2f7;
+            text-align: left;
+        }
+
+        .part-table th {
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            color: #94a3b8;
+            position: sticky;
+            top: 0;
+            background: #f8fafc;
+            z-index: 1;
+        }
+
+        .part-table tr.selected {
+            background: rgba(31, 124, 255, 0.08);
+        }
+
+        .part-table tr:hover {
+            background: #f3f4f6;
+        }
+
+        .part-pagination {
+            flex-shrink: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.85rem 1rem;
+            margin-top: 0.5rem;
+            background: #ffffff;
+            border: 1px solid #d8e3f0;
+            border-radius: 12px;
+            box-shadow: 0 -6px 20px rgba(15, 23, 42, 0.08);
+        }
+
+        .part-pagination .page-info {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .part-pagination .page-info small {
+            font-weight: 500;
+            color: #64748b;
+        }
+
+        .part-pagination .page-actions {
+            display: flex;
+            gap: 0.6rem;
+            align-items: center;
+        }
+
+        .part-pagination button {
+            padding: 0.55rem 1.1rem;
+            border: 1px solid #cbd5e1;
+            background: #f1f5f9;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #0f172a;
+            transition: all 0.2s ease;
+            min-width: 110px;
+        }
+
+        .part-pagination button:hover:not(:disabled) {
+            border-color: #1f7cff;
+            background: #1f7cff;
+            color: #fff;
+            box-shadow: 0 6px 14px rgba(31, 124, 255, 0.2);
+        }
+
+        .part-pagination button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            background: #e2e8f0;
+            border-color: #e2e8f0;
+            color: #94a3b8;
+            box-shadow: none;
+        }
+
+        .right-panel {
+            width: 350px;
+            border-left: 1px solid #e5e7eb;
+            padding-left: 1rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .select-part-btn {
+            border: none;
+            border-radius: 999px;
+            padding: 0.4rem 1rem;
+            background: #1f7cff;
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            width: 40px;
+            height: 40px;
+        }
+
+        .select-part-btn:hover {
+            background: #1e40af;
+            transform: scale(1.05);
+        }
+
+        .select-part-btn.deselected {
+            background: #6b7280;
+        }
+
+        .select-part-btn.deselected:hover {
+            background: #4b5563;
+        }
+
+        .part-loading,
+        .part-empty {
+            text-align: center;
+            color: #94a3b8;
+            padding: 2rem;
+        }
+
+        .selected-summary {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            margin: 0;
+            padding: 0;
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            max-height: 55vh;
+            overflow: hidden;
+        }
+
+        .selected-summary h4 {
+            margin: 0 0 1rem;
+            font-size: 1.125rem;
+            color: #1f2937;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .selected-summary ul {
+            flex: 1;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            overflow-y: auto;
+            max-height: calc(55vh - 3rem);
+            padding-right: 0.35rem;
+        }
+
+        .selected-summary li {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            padding: 0.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            background: #f8fafc;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease;
+        }
+
+        .selected-summary li:hover {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .selected-summary li.empty {
+            text-align: center;
+            padding: 2rem 0;
+            color: #94a3b8;
+            border: none;
+            background: none;
+            box-shadow: none;
+            justify-content: center;
+        }
+
+        .selected-item-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .selected-item-name {
+            font-weight: 600;
+            color: #1f2937;
+            font-size: 0.95rem;
+        }
+
+        .selected-item-qty {
+            color: #6b7280;
+            font-size: 0.85rem;
+        }
+
+        .selected-item-prices {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+        }
+
+        .selected-summary li .remove-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 0.25rem 0.5rem;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: background 0.2s ease;
+            align-self: flex-end;
+        }
+
+        .selected-summary li .remove-btn:hover {
+            background: #dc2626;
+        }
+
+        .total-price {
+            font-weight: 700;
+            color: #059669;
+            font-size: 1.125rem;
+        }
+
+        .dialog-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            margin-top: 0.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .btn-primary,
+        .btn-outline {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: #1f7cff;
+            color: white;
+            border: none;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #1e40af;
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: #4b5563;
+            border: 1px solid #d1d5db;
+        }
+
+        .btn-outline:hover {
+            border-color: #4f46e5;
+            color: #4f46e5;
+        }
+
+        .filter-modal .form-group {
+            margin-bottom: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .filter-modal select,
+        .filter-modal input {
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            outline: none;
+        }
+
+        /* Detail Modal Styles */
+        .detail-dialog {
+            display: flex;
+            gap: 1rem;
+            max-height: 70vh;
+        }
+
+        .detail-left {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .detail-info-card {
+            background: #f8fafc;
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .detail-info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .detail-info-label {
+            font-weight: 600;
+            color: #64748b;
+        }
+
+        .detail-info-value {
+            color: #1f2937;
+        }
+
+        .detail-right {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .items-table-wrapper {
+            flex: 1;
+            overflow: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+        }
+
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .items-table th,
+        .items-table td {
+            padding: 0.5rem;
+            text-align: left;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .items-table th {
+            background: #f8fafc;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #64748b;
+        }
+
+        .items-table .total-row {
+            font-weight: 700;
+            background: #f0f9ff;
+        }
+
+        .detail-actions {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
+            padding-top: 1rem;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        /* Manager Pricing Modal */
+        .pricing-dialog {
+            max-height: 70vh;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .pricing-table-wrapper {
+            flex: 1;
+            overflow: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: #fff;
+        }
+
+        .pricing-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .pricing-table th,
+        .pricing-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .pricing-table th {
+            background: #f8fafc;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #64748b;
+        }
+
+        .price-input {
+            width: 100px;
+            padding: 0.25rem;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .profit-cell {
+            color: #059669;
+            font-weight: 600;
+        }
+
+        .total-section {
+            background: #f8fafc;
+            padding: 1rem;
+            border-top: 2px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Header and Sidebar Mock */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 260px;
+            right: 0;
+            height: 70px;
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            z-index: 100;
+        }
+
+        .header h1 {
+            font-size: 1.25rem;
+            color: #1f2937;
+        }
+
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 260px;
+            height: 100vh;
+            background: #f8fafc;
+            border-right: 1px solid #e5e7eb;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 0;
+            max-width: 80%;
+            max-height: 80%;
+            overflow-y: auto;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal.large .modal-content {
+            width: 90%;
+            max-width: 1200px;
+        }
+
+        .modal.medium .modal-content {
+            width: 500px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .modal-header h2,
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1.25rem;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6b7280;
+            padding: 0;
+            width: 2rem;
+            height: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-btn:hover {
+            color: #ef4444;
+        }
+
+        .modal-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+        }
+
+        @media (max-width: 1024px) {
+            .content-wrapper {
+                margin-left: 0 !important;
+            }
+
+            .header {
+                left: 0;
+            }
+
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .table-card,
+            .filters-card,
+            .timeline-card {
+                padding: 1rem;
+            }
+
+            .part-selection-body,
+            .detail-dialog,
+            .pricing-dialog {
+                flex-direction: column;
+            }
+
+            .right-panel {
+                width: auto;
+                border-left: none;
+                border-top: 1px solid #e5e7eb;
+                padding-left: 0;
+                padding-top: 1rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Mock Sidebar -->
+    <aside class="sidebar">
+        <nav>
+            <ul style="list-style: none; padding: 2rem 0;">
+                <li style="padding: 1rem; border-bottom: 1px solid #e5e7eb;"><i class="fas fa-home"></i> Dashboard</li>
+                <li style="padding: 1rem; border-bottom: 1px solid #e5e7eb;"><i class="fas fa-tag"></i> Price Requests
+                </li>
+                <li style="padding: 1rem; border-bottom: 1px solid #e5e7eb;"><i class="fas fa-box"></i> Inventory</li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- Mock Header -->
+    <header class="header">
+        <h1>Quản lý yêu cầu giá bán</h1>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <i class="fas fa-bell"></i>
+            <button style="background: none; border: none; cursor: pointer;"><i class="fas fa-user"></i></button>
+        </div>
+    </header>
+
+    <div class="restock-requests-view">
+        <div class="content-wrapper">
+            <main class="main-content">
+                <div class="page-header">
+                    <div>
+                        <p class="page-subtitle">Quản lý giá bán</p>
+                        <h1>Yêu cầu giá bán</h1>
+                        <p class="page-description">
+                            Theo dõi các yêu cầu giá bán phụ tùng và trạng thái xử lý
+                        </p>
+                    </div>
+                    <button class="btn-primary" onclick="openModal('part-modal')"><i class="fas fa-plus"></i> Tạo yêu
+                        cầu mới</button>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card created">
+                        <div class="stat-label">Đã tạo</div>
+                        <div class="stat-value">2</div>
+                        <div class="stat-meta">
+                            <i class="fas fa-file"></i>
+                            <span>Chờ định giá</span>
+                        </div>
+                    </div>
+                    <div class="stat-card priced">
+                        <div class="stat-label">Đã định giá</div>
+                        <div class="stat-value">1</div>
+                        <div class="stat-meta">
+                            <i class="fas fa-calculator"></i>
+                            <span>Chờ xác nhận</span>
+                        </div>
+                    </div>
+                    <div class="stat-card confirmed">
+                        <div class="stat-label">Đã xác nhận</div>
+                        <div class="stat-value">1</div>
+                        <div class="stat-meta">
+                            <i class="fas fa-check"></i>
+                            <span>Sẵn sàng đóng</span>
+                        </div>
+                    </div>
+                    <div class="stat-card closed">
+                        <div class="stat-label">Đã đóng</div>
+                        <div class="stat-value">0</div>
+                        <div class="stat-meta">
+                            <i class="fas fa-lock"></i>
+                            <span>Hoàn tất</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="filters-card">
+                    <div class="search-field">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Tìm theo mã yêu cầu, người tạo..." value="">
+                    </div>
+
+                    <div class="status-tabs">
+                        <button class="status-tab active">
+                            Tất cả <span class="badge">4</span>
+                        </button>
+                        <button class="status-tab">
+                            Đã tạo <span class="badge">2</span>
+                        </button>
+                        <button class="status-tab">
+                            Đã định giá <span class="badge">1</span>
+                        </button>
+                        <button class="status-tab">
+                            Đã xác nhận <span class="badge">1</span>
+                        </button>
+                        <button class="status-tab">
+                            Đã đóng <span class="badge">0</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-card">
+                    <div class="table-header">
+                        <div>
+                            <h2>Danh sách yêu cầu</h2>
+                            <p id="request-count">4 yêu cầu phù hợp</p>
+                        </div>
+                        <button class="btn-outline" onclick="openModal('filter-modal')"><i class="fas fa-filter"></i> Bộ
+                            lọc nâng cao</button>
+                    </div>
+
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>
+                                        <span>Mã yêu cầu</span>
+                                        <button class="filter-btn" title="Bộ lọc"><i class="fas fa-filter"></i></button>
+                                    </th>
+                                    <th>
+                                        <span>Người tạo</span>
+                                        <button class="filter-btn" title="Bộ lọc"><i class="fas fa-filter"></i></button>
+                                    </th>
+                                    <th>
+                                        <span>Số dòng</span>
+                                        <button class="filter-btn" title="Bộ lọc"><i class="fas fa-filter"></i></button>
+                                    </th>
+                                    <th>
+                                        <span>Ngày tạo</span>
+                                        <button class="filter-btn" title="Bộ lọc"><i class="fas fa-filter"></i></button>
+                                    </th>
+                                    <th>
+                                        <span>Trạng thái</span>
+                                        <button class="filter-btn" title="Bộ lọc"><i class="fas fa-filter"></i></button>
+                                    </th>
+                                    <th>
+                                        <span>Ghi chú</span>
+                                        <button class="filter-btn" title="Bộ lọc"><i class="fas fa-filter"></i></button>
+                                    </th>
+                                    <th>
+                                        <span>Tổng giá trị</span>
+                                        <button class="filter-btn" title="Bộ lọc"><i class="fas fa-filter"></i></button>
+                                    </th>
+                                    <th>Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody id="request-tbody">
+                                <!-- Dynamically populated -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Part Selection Modal -->
+    <div id="part-modal" class="modal large">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Chọn phụ tùng cho phiếu yêu cầu</h2>
+                <button class="close-btn" onclick="closeModal('part-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="part-selection-dialog">
+                    <div class="part-selection-header">
+                        <div>
+                            <h3>Danh sách phụ tùng</h3>
+                            <p id="part-count">11 phụ tùng khả dụng</p>
+                        </div>
+                        <input class="part-search-input" id="part-search" placeholder="Nhập tên hoặc mã phụ tùng..."
+                            value="" oninput="filterParts()">
+                    </div>
+
+                    <div class="part-selection-body">
+                        <div class="left-panel">
+                            <div class="part-table-wrapper">
+                                <table class="part-table">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Mã phụ tùng</th>
+                                            <th>Tên phụ tùng</th>
+                                            <th>Số lượng tồn</th>
+                                            <th>Danh mục</th>
+                                            <th>Giá mua (old_price)</th>
+                                            <th>Giá bán hiện tại</th>
+                                            <th>Hành động</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="part-tbody">
+                                        <!-- Dynamically populated -->
+                                    </tbody>
+                                </table>
+                                <div class="part-pagination">
+                                    <button id="prev-part" onclick="prevPage()" disabled>Trước</button>
+                                    <span id="part-page-info">Trang 1 / 3</span>
+                                    <button id="next-part" onclick="nextPage()">Sau</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="right-panel">
+                            <div class="selected-summary" id="selected-summary">
+                                <h4>
+                                    <span>Phụ tùng đã chọn (<span id="selected-count">0</span>)</span>
+                                    <span class="total-price" id="total-price">0 ₫</span>
+                                </h4>
+                                <ul id="selected-list">
+                                    <!-- Dynamic list or empty message -->
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="dialog-actions">
+                        <button class="btn-outline" onclick="closeModal('part-modal')">Hủy</button>
+                        <button class="btn-primary" id="create-btn" disabled onclick="confirmSelection()">Tạo
+                            phiếu</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detail Modal -->
+    <div id="detail-modal" class="modal large">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="detail-title">Chi tiết yêu cầu</h2>
+                <button class="close-btn" onclick="closeModal('detail-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="detail-dialog">
+                    <div class="detail-left">
+                        <div class="detail-info-card">
+                            <h3>Thông tin chung</h3>
+                            <div class="detail-info-row">
+                                <span class="detail-info-label">Mã yêu cầu:</span>
+                                <span class="detail-info-value" id="detail-code"></span>
+                            </div>
+                            <div class="detail-info-row">
+                                <span class="detail-info-label">Ngày tạo:</span>
+                                <span class="detail-info-value" id="detail-request-date"></span>
+                            </div>
+                            <div class="detail-info-row">
+                                <span class="detail-info-label">Người tạo:</span>
+                                <span class="detail-info-value" id="detail-requested-by"></span>
+                            </div>
+                            <div class="detail-info-row">
+                                <span class="detail-info-label">Người xác nhận:</span>
+                                <span class="detail-info-value" id="detail-confirmed-by"></span>
+                            </div>
+                            <div class="detail-info-row">
+                                <span class="detail-info-label">Ngày xác nhận:</span>
+                                <span class="detail-info-value" id="detail-confirmed-date"></span>
+                            </div>
+                            <div class="detail-info-row">
+                                <span class="detail-info-label">Trạng thái:</span>
+                                <span class="detail-info-value" id="detail-status"></span>
+                            </div>
+                            <div class="detail-info-row">
+                                <span class="detail-info-label">Ghi chú:</span>
+                                <span class="detail-info-value" id="detail-note"></span>
+                            </div>
+                            <div class="detail-info-row">
+                                <span class="detail-info-label">Tổng giá trị:</span>
+                                <span class="detail-info-value" id="detail-total"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="detail-right">
+                        <div style="margin-bottom: 1rem;">
+                            <h3>Danh sách mặt hàng</h3>
+                        </div>
+                        <div class="items-table-wrapper">
+                            <table class="items-table">
+                                <thead>
+                                    <tr>
+                                        <th>Mã PT</th>
+                                        <th>Tên</th>
+                                        <th>Số lượng</th>
+                                        <th>Giá mua (old_price)</th>
+                                        <th>Giá bán đề xuất (new_price)</th>
+                                        <th>Thành tiền</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="detail-items-tbody">
+                                    <!-- Dynamically populated -->
+                                </tbody>
+                                <tfoot>
+                                    <tr class="total-row">
+                                        <td colspan="5" style="text-align: right; font-weight: 700;">Tổng cộng:</td>
+                                        <td id="detail-grand-total"></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                        <div class="detail-actions">
+                            <button class="btn-primary" id="process-btn" onclick="handleProcess()"
+                                style="display: none;">Xử lý</button>
+                            <button class="btn-outline" onclick="closeModal('detail-modal')">Đóng</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manager Pricing Modal -->
+    <div id="pricing-modal" class="modal large">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="pricing-title">Nhập giá bán đề xuất</h2>
+                <button class="close-btn" onclick="closeModal('pricing-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="pricing-dialog">
+                    <div class="pricing-table-wrapper">
+                        <table class="pricing-table">
+                            <thead>
+                                <tr>
+                                    <th>Mã PT</th>
+                                    <th>Tên</th>
+                                    <th>Số lượng</th>
+                                    <th>Giá mua (old_price)</th>
+                                    <th>Giá bán đề xuất (new_price)</th>
+                                    <th>Thành tiền</th>
+                                    <th>Lợi nhuận</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pricing-items-tbody">
+                                <!-- Dynamically populated -->
+                            </tbody>
+                            <tfoot id="pricing-total-section" class="total-section">
+                                <tr>
+                                    <td colspan="4" style="text-align: right; font-weight: 700;">Tổng cộng:</td>
+                                    <td id="pricing-total-amount"></td>
+                                    <td id="pricing-total-profit"></td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    <div class="dialog-actions">
+                        <button class="btn-outline" onclick="closeModal('pricing-modal')">Hủy</button>
+                        <button class="btn-primary" id="price-btn" onclick="confirmPricing()">Lưu định giá
+                            (PRICED)</button>
+                        <button class="btn-success" id="confirm-btn" onclick="confirmFinal()" style="display: none;">Xác
+                            nhận (CONFIRMED)</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Modal -->
+    <div id="filter-modal" class="modal medium">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Bộ lọc nâng cao</h2>
+                <button class="close-btn" onclick="closeModal('filter-modal')">&times;</button>
+            </div>
+            <div class="modal-body filter-modal">
+                <div class="form-group">
+                    <label>Toán tử</label>
+                    <select>
+                        <option value="equals">Bằng (=)</option>
+                        <option value="not_equals">Không bằng (≠)</option>
+                        <option value="contains">Chứa</option>
+                        <option value="not_contains">Không chứa</option>
+                        <option value="starts_with">Bắt đầu</option>
+                        <option value="ends_with">Kết thúc</option>
+                        <option value="empty">Rỗng</option>
+                        <option value="not_empty">Không rỗng</option>
+                        <option value="greater_than">&gt;</option>
+                        <option value="less_than">&lt;</option>
+                        <option value="greater_or_equal">≥</option>
+                        <option value="less_or_equal">≤</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Giá trị</label>
+                    <input type="text" placeholder="Nhập giá trị lọc...">
+                </div>
+                <div class="dialog-actions">
+                    <button class="btn-outline" onclick="closeModal('filter-modal')">Hủy</button>
+                    <button class="btn-outline">Xóa lọc</button>
+                    <button class="btn-primary">Áp dụng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mock requests data with new fields
+        const requests = [
+            {
+                index: 0,
+                code: 'PR-2024-108',
+                internalId: 1341,
+                requestedBy: 'Nguyễn Văn A',
+                lines: 12,
+                requestDate: '05/12/2024',
+                status: 'CREATED',
+                note: 'Bổ sung khẩn cấp',
+                totalAmount: 0, // Will be calculated based on new_price
+                confirmedBy: null,
+                confirmedDate: null,
+                items: [
+                    { partId: 1, code: 'PT-001', name: 'Brake Pad Set', quantity: 5, oldPrice: 450000, newPrice: 0 },
+                    // Mock more items
+                ]
+            },
+            {
+                index: 1,
+                code: 'PR-2024-104',
+                internalId: 1340,
+                requestedBy: 'Trần Thị B',
+                lines: 7,
+                requestDate: '03/12/2024',
+                status: 'PRICED',
+                note: '',
+                totalAmount: 28750000,
+                confirmedBy: null,
+                confirmedDate: null,
+                items: [
+                    { partId: 3, code: 'PT-003', name: 'Spark Plug', quantity: 20, oldPrice: 72000, newPrice: 88000 },
+                    // Mock more
+                ]
+            },
+            {
+                index: 2,
+                code: 'PR-2024-098',
+                internalId: 1339,
+                requestedBy: 'Phạm Văn D',
+                lines: 5,
+                requestDate: '02/12/2024',
+                status: 'CONFIRMED',
+                note: 'Kiểm tra lại dự toán',
+                totalAmount: 16800000,
+                confirmedBy: 'Lê Văn Manager',
+                confirmedDate: '03/12/2024',
+                items: [
+                    { partId: 4, code: 'PT-004', name: 'Air Filter', quantity: 8, oldPrice: 180000, newPrice: 220000 },
+                    // Mock more
+                ]
+            },
+            {
+                index: 3,
+                code: 'PR-2024-096',
+                internalId: 1338,
+                requestedBy: 'Hoàng Thị E',
+                lines: 9,
+                requestDate: '28/11/2024',
+                status: 'CLOSED',
+                note: 'Hoàn tất giá bán',
+                totalAmount: 32900000,
+                confirmedBy: 'Lê Văn Manager',
+                confirmedDate: '29/11/2024',
+                items: [
+                    { partId: 5, code: 'PT-005', name: 'Tire Valve', quantity: 50, oldPrice: 45000, newPrice: 55000 },
+                    // Mock more
+                ]
+            }
+        ];
+
+        // Parts data with import_price and selling_price
+        const parts = [
+                { id: 1, code: 'PT-001', name: 'Brake Pad Set', qty: 50, category: 'Hệ thống phanh', catCode: 'BRAKE', import_price: 450000, selling_price: 0, warranty: 12 },
+                { id: 2, code: 'PT-002', name: 'Engine Oil Filter', qty: 100, category: 'Bộ lọc', catCode: 'FILTER', import_price: 135000, selling_price: 165000, warranty: 6 },
+                { id: 3, code: 'PT-003', name: 'Spark Plug', qty: 200, category: 'Hệ thống đánh lửa', catCode: 'IGNITION', import_price: 72000, selling_price: 88000, warranty: 24 },
+                { id: 4, code: 'PT-004', name: 'Air Filter', qty: 75, category: 'Bộ lọc', catCode: 'FILTER', import_price: 180000, selling_price: 220000, warranty: 12 },
+                { id: 5, code: 'PT-005', name: 'Tire Valve', qty: 300, category: 'Lốp xe', catCode: 'TIRE', import_price: 45000, selling_price: 55000, warranty: 3 },
+                // Case 6: Chưa có giá bán để test "Chưa có giá bán"
+                { id: 6, code: 'PT-006', name: 'LED Headlight', qty: 40, category: 'Đèn xe', catCode: 'LIGHT', import_price: 1200000, selling_price: null, warranty: 12 },
+                // Case 7: Giá mua cao nhưng giá bán thấp -> test nghiệp vụ validate
+                { id: 7, code: 'PT-007', name: 'Premium Oil', qty: 60, category: 'Dầu nhớt', catCode: 'OIL', import_price: 350000, selling_price: 300000, warranty: 6 },
+                // Case 8: Số lượng rất lớn
+                { id: 8, code: 'PT-008', name: 'Motorbike Chain', qty: 1000, category: 'Truyền động', catCode: 'DRIVE', import_price: 90000, selling_price: 120000, warranty: 12 },
+                // Case 9: Giá cực nhỏ để test format
+                { id: 9, code: 'PT-009', name: 'Screw Set', qty: 500, category: 'Phụ kiện', catCode: 'ACCESSORY', import_price: 2000, selling_price: 3000, warranty: 0 },
+                // Case 10: Giá cực lớn để test hiển thị
+                { id: 10, code: 'PT-010', name: 'ABS Control Unit', qty: 10, category: 'Điện tử', catCode: 'ELECTRIC', import_price: 8500000, selling_price: 10500000, warranty: 24 },
+                // Case 11: Part đời mới – chưa set giá bán
+                { id: 11, code: 'PT-011', name: 'Smart Ignition Module', qty: 25, category: 'Đánh lửa', catCode: 'IGNITION', import_price: 2400000, selling_price: null, warranty: 18 },
+            ];
+
+
+        let filteredParts = parts;
+        let currentPage = 1;
+        const itemsPerPage = 5;
+        let selectedParts = [];
+        let currentDetailIndex = -1;
+        let currentPricingIndex = -1;
+        const formatCurrency = (num) => num.toLocaleString('vi-VN') + ' ₫';
+
+        // Render requests table
+        function renderRequestsTable() {
+            const tbody = document.getElementById('request-tbody');
+            const visibleRequests = requests; // Mock filter
+            document.getElementById('request-count').textContent = `${visibleRequests.length} yêu cầu phù hợp`;
+
+            tbody.innerHTML = visibleRequests.map((r) => {
+                const statusClass = `status-${r.status.toLowerCase()}`;
+                const statusText = { CREATED: 'Đã tạo', PRICED: 'Đã định giá', CONFIRMED: 'Đã xác nhận', CLOSED: 'Đã đóng' }[r.status];
+                const icon = { CREATED: 'fa-file', PRICED: 'fa-calculator', CONFIRMED: 'fa-check', CLOSED: 'fa-lock' }[r.status];
+                const total = r.totalAmount || r.items.reduce((sum, i) => sum + (i.newPrice * i.quantity), 0);
+
+                return `
+                    <tr>
+                        <td>
+                            <strong>${r.code}</strong>
+                            <span class="muted">#${r.internalId}</span>
+                        </td>
+                        <td>${r.requestedBy}</td>
+                        <td>${r.lines} mặt hàng</td>
+                        <td>${r.requestDate}</td>
+                        <td>
+                            <span class="status-chip ${statusClass}">
+                                <i class="fas ${icon}"></i>
+                                ${statusText}
+                            </span>
+                        </td>
+                        <td>${r.note || ''}</td>
+                        <td>${formatCurrency(total)}</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="action-button" title="Xem chi tiết" onclick="openDetail(${r.index})">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="action-button" title="Xử lý" onclick="handleProcess(${r.index})">
+                                    <i class="fas fa-cog"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Detail modal
+        function openDetail(index) {
+            currentDetailIndex = index;
+            const r = requests[index];
+            if (!r) return;
+
+            document.getElementById('detail-title').textContent = `Chi tiết yêu cầu ${r.code}`;
+            document.getElementById('detail-code').textContent = r.code;
+            document.getElementById('detail-request-date').textContent = r.requestDate;
+            document.getElementById('detail-requested-by').textContent = r.requestedBy;
+            document.getElementById('detail-confirmed-by').textContent = r.confirmedBy || 'Chưa có';
+            document.getElementById('detail-confirmed-date').textContent = r.confirmedDate || 'Chưa có';
+            document.getElementById('detail-status').textContent = { CREATED: 'Đã tạo', PRICED: 'Đã định giá', CONFIRMED: 'Đã xác nhận', CLOSED: 'Đã đóng' }[r.status];
+            document.getElementById('detail-note').textContent = r.note || 'Không có ghi chú';
+            document.getElementById('detail-total').textContent = formatCurrency(r.totalAmount || r.items.reduce((sum, i) => sum + (i.newPrice * i.quantity), 0));
+
+            const itemsTbody = document.getElementById('detail-items-tbody');
+            itemsTbody.innerHTML = r.items.map(item => `
+                <tr>
+                    <td>${item.code}</td>
+                    <td>${item.name}</td>
+                    <td>${item.quantity}</td>
+                    <td>${formatCurrency(item.oldPrice)}</td>
+                    <td>${formatCurrency(item.newPrice)}</td>
+                    <td>${formatCurrency(item.newPrice * item.quantity)}</td>
+                </tr>
+            `).join('');
+
+            document.getElementById('detail-grand-total').textContent = formatCurrency(r.totalAmount || r.items.reduce((sum, i) => sum + (i.newPrice * i.quantity), 0));
+
+            document.getElementById('process-btn').style.display = r.status === 'CREATED' || r.status === 'PRICED' ? 'inline-block' : 'none';
+
+            openModal('detail-modal');
+        }
+
+        function handleProcess(index) {
+            currentPricingIndex = index;
+            const r = requests[index];
+            if (r.status === 'CREATED') {
+                openPricingModal();
+            } else if (r.status === 'PRICED') {
+                r.status = 'CONFIRMED';
+                r.confirmedBy = 'Manager Current';
+                r.confirmedDate = new Date().toISOString().split('T')[0];
+                renderRequestsTable();
+                alert('Đã xác nhận yêu cầu!');
+            } else if (r.status === 'CONFIRMED') {
+                r.status = 'CLOSED';
+                renderRequestsTable();
+                alert('Đã đóng yêu cầu và cập nhật status part sang ACTIVE!');
+            }
+        }
+
+        // Pricing modal
+        function openPricingModal() {
+            const r = requests[currentPricingIndex];
+            document.getElementById('pricing-title').textContent = `Nhập giá cho ${r.code}`;
+
+            const tbody = document.getElementById('pricing-items-tbody');
+            tbody.innerHTML = r.items.map((item, idx) => {
+                const profit = item.newPrice ? (item.newPrice - item.oldPrice) * item.quantity : 0;
+                const totalItem = item.newPrice ? item.newPrice * item.quantity : 0;
+                return `
+                    <tr>
+                        <td>${item.code}</td>
+                        <td>${item.name}</td>
+                        <td>${item.quantity}</td>
+                        <td>${formatCurrency(item.oldPrice)}</td>
+                        <td><input type="number" class="price-input" value="${item.newPrice || ''}" placeholder="Nhập giá bán" onchange="updatePricingItem(${currentPricingIndex}, ${item.partId}, this.value)" /></td>
+                        <td id="item-total-${item.partId}">${formatCurrency(totalItem)}</td>
+                        <td class="profit-cell" id="item-profit-${item.partId}">${formatCurrency(profit)}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            updatePricingTotals();
+            document.getElementById('price-btn').style.display = 'inline-block';
+            document.getElementById('confirm-btn').style.display = 'none';
+            openModal('pricing-modal');
+        }
+
+        function updatePricingItem(reqIndex, partId, newPrice) {
+            const r = requests[reqIndex];
+            const item = r.items.find(i => i.partId === partId);
+            if (item) {
+                item.newPrice = parseFloat(newPrice) || 0;
+                const totalItem = item.newPrice * item.quantity;
+                const profit = (item.newPrice - item.oldPrice) * item.quantity;
+                document.getElementById(`item-total-${partId}`).textContent = formatCurrency(totalItem);
+                document.getElementById(`item-profit-${partId}`).textContent = formatCurrency(profit);
+                updatePricingTotals();
+            }
+        }
+
+        function updatePricingTotals() {
+            const r = requests[currentPricingIndex];
+            const totalAmount = r.items.reduce((sum, i) => sum + (i.newPrice * i.quantity), 0);
+            const totalProfit = r.items.reduce((sum, i) => sum + ((i.newPrice - i.oldPrice) * i.quantity), 0);
+            document.getElementById('pricing-total-amount').textContent = formatCurrency(totalAmount);
+            document.getElementById('pricing-total-profit').textContent = formatCurrency(totalProfit);
+            r.totalAmount = totalAmount;
+        }
+
+        function confirmPricing() {
+            const r = requests[currentPricingIndex];
+            r.status = 'PRICED';
+            closeModal('pricing-modal');
+            renderRequestsTable();
+            alert('Đã lưu định giá! Trạng thái: PRICED');
+        }
+
+        function confirmFinal() {
+            const r = requests[currentPricingIndex];
+            r.status = 'CONFIRMED';
+            r.confirmedBy = 'Manager Current';
+            r.confirmedDate = new Date().toISOString().split('T')[0];
+            closeModal('pricing-modal');
+            renderRequestsTable();
+            alert('Đã xác nhận cuối cùng! Stocker có thể đóng.');
+        }
+
+        // Part selection functions
+        function renderParts() {
+            const tbody = document.getElementById('part-tbody');
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const pageParts = filteredParts.slice(start, end);
+
+            tbody.innerHTML = pageParts.map(p => `
+                <tr data-part-id="${p.id}" ${selectedParts.some(s => s.id === p.id) ? 'class="selected"' : ''}>
+                    <td>${p.id}</td>
+                    <td><strong>${p.code}</strong></td>
+                    <td>${p.name}</td>
+                    <td>${p.qty} cái</td>
+                    <td>
+                        <div class="supplier-cell">
+                            <span class="supplier-name">${p.category}</span>
+                            <span class="muted">${p.catCode}</span>
+                        </div>
+                    </td>
+                    <td>${formatCurrency(p.import_price)}</td>
+                    <td>${formatCurrency(p.selling_price)}</td>
+                    <td>
+                        <button
+                        class="select-part-btn ${selectedParts.some(s => s.id === p.id) ? '' : 'deselected'}"
+                        onclick="togglePart(${p.id})"
+                        >
+                        ${selectedParts.some(s => s.id === p.id)
+                    ? '<i class="fas fa-check"></i>'
+                    : '<i class="far fa-circle"></i>'}
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+
+            const visibleCount = filteredParts.length;
+            document.getElementById('part-count').textContent = `${visibleCount} phụ tùng khả dụng`;
+            updatePagination();
+        }
+
+        function togglePart(id) {
+            const index = selectedParts.findIndex(s => s.id === id);
+            const part = parts.find(p => p.id === id);
+            if (index > -1) {
+                selectedParts.splice(index, 1);
+            } else {
+                selectedParts.push({
+                    id, code: part.code, name: part.name, quantity: 1, // Fixed quantity 1 per selection
+                    oldPrice: part.import_price, newPrice: 0, warranty: part.warranty
+                });
+            }
+            renderParts();
+            updateSummary();
+        }
+
+        function removePart(id) {
+            selectedParts = selectedParts.filter(s => s.id !== id);
+            renderParts();
+            updateSummary();
+        }
+
+        function updateSummary() {
+            const list = document.getElementById('selected-list');
+            const countEl = document.getElementById('selected-count');
+            const createBtn = document.getElementById('create-btn');
+
+            const count = selectedParts.length;
+            countEl.textContent = count;
+
+            if (count > 0) {
+                list.innerHTML = selectedParts.map(s => `
+                    <li>
+                        <div class="selected-item-info">
+                            <div class="selected-item-name">${s.code} - ${s.name}</div>
+                            <div class="selected-item-qty">Số lượng: ${s.quantity} (tồn: ${s.oldPrice ? parts.find(p => p.id === s.id)?.qty : 'N/A'} )</div>
+                            <div class="selected-item-prices">
+                                <span>Giá mua: ${formatCurrency(s.oldPrice)}</span>
+                                <span>
+                                    Giá bán hiện tại:${parts.find(p => p.id === s.id)?.selling_price? formatCurrency(parts.find(p => p.id === s.id).selling_price): 'Chưa có giá bán'}
+                                </span>
+                            </div>
+                        </div>
+                        <button class="remove-btn" onclick="removePart(${s.id})">Xóa</button>
+                    </li>
+                `).join('');
+                createBtn.disabled = false;
+            } else {
+                list.innerHTML = '<li class="empty">Chưa chọn phụ tùng nào</li>';
+                createBtn.disabled = true;
+            }
+        }
+
+        function confirmSelection() {
+            if (selectedParts.length === 0) return;
+            // Mock create request
+            const newRequest = {
+                index: requests.length,
+                code: `PR-${new Date().getFullYear()}-${String(requests.length + 100).padStart(3, '0')}`,
+                internalId: requests.length + 1341,
+                requestedBy: 'Current Stocker',
+                lines: selectedParts.length,
+                requestDate: new Date().toLocaleDateString('vi-VN'),
+                status: 'CREATED',
+                note: '',
+                totalAmount: 0,
+                confirmedBy: null,
+                confirmedDate: null,
+                items: selectedParts.map(s => ({ ...s, partId: s.id }))
+            };
+            requests.push(newRequest);
+            alert(`Tạo phiếu ${newRequest.code} với ${selectedParts.length} phụ tùng! (Demo)`);
+            closeModal('part-modal');
+            selectedParts = [];
+            renderRequestsTable();
+        }
+
+        // Pagination and filter functions
+        function updatePagination() {
+            const totalPages = Math.ceil(filteredParts.length / itemsPerPage);
+            document.getElementById('part-page-info').textContent = `Trang ${currentPage} / ${totalPages}`;
+            document.getElementById('prev-part').disabled = currentPage === 1;
+            document.getElementById('next-part').disabled = currentPage === totalPages;
+        }
+
+        function prevPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                renderParts();
+            }
+        }
+
+        function nextPage() {
+            const totalPages = Math.ceil(filteredParts.length / itemsPerPage);
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderParts();
+            }
+        }
+
+        function filterParts() {
+            const search = document.getElementById('part-search').value.toLowerCase();
+            filteredParts = parts.filter(p =>
+                p.code.toLowerCase().includes(search) ||
+                p.name.toLowerCase().includes(search) ||
+                p.category.toLowerCase().includes(search)
+            );
+            currentPage = 1;
+            renderParts();
+        }
+
+        // Modal functions
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('show');
+            if (modalId === 'part-modal') {
+                selectedParts = [];
+                filteredParts = parts;
+                currentPage = 1;
+                renderParts();
+                updateSummary();
+            }
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('show');
+        }
+
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeModal(modal.id);
+                }
+            });
+        });
+
+        // Initial render
+        renderRequestsTable();
+        renderParts();
+    </script>
+</body>
+
+</html>
