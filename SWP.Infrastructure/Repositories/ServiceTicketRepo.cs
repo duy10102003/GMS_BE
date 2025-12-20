@@ -1068,6 +1068,13 @@ WHERE c.customer_id = @CustomerId
                 PageSize = filter.PageSize
             };
         }
+
+        public async Task<TechnicalTask?> GetTaskByServiceTicketId(int serviceTicketId)
+        {
+            var sql = "SELECT * FROM `technical_task` WHERE `service_ticket_id` = @ServiceTicketId AND `is_deleted` = 0";
+            using var connection = new MySqlConnection(_connection);
+            return await connection.QueryFirstOrDefaultAsync<TechnicalTask>(sql, new { ServiceTicketId = serviceTicketId });
+        }
     }
 }
 

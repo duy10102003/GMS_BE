@@ -55,6 +55,14 @@ namespace SWP.Core.Interfaces.Repositories
         /// <returns>Danh sách Service Ticket Detail</returns>
         Task<List<ServiceTicketDetail>> GetServiceTicketDetailsAsync(int serviceTicketId);
 
+        /// <summary>
+        /// Lấy task theo Service Ticket ID
+        /// </summary>
+        /// <param name="serviceTicketId">ID của Service Ticket</param>
+        /// <returns>Id của task</returns>
+        Task<TechnicalTask?> GetTaskByServiceTicketId
+            (int serviceTicketId);
+
 
         /// <summary>
         /// Lấy danh sách Service Ticket có phân trang

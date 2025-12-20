@@ -1076,24 +1076,28 @@ namespace SWP.Core.Services
             }
 
             // Chỉ cho phép chuyển từ InProgress
-            if (serviceTicket.ServiceTicketStatus != ServiceTicketStatus.InProgress)
-            {
-                throw new ValidateException("Chỉ có thể chuyển sang trạng thái này từ InProgress.");
-            }
+            //if (serviceTicket.ServiceTicketStatus != ServiceTicketStatus.InProgress)
+            //{
+            //    throw new ValidateException("Chỉ có thể chuyển sang trạng thái này từ InProgress.");
+            //}
 
             await EnsureUserExists(request.ModifiedBy);
 
             // Deduct part quantity
-            var details = await _serviceTicketRepo.GetServiceTicketDetailsAsync(id);
-            foreach (var detail in details.Where(d => d.PartId.HasValue && d.Quantity.HasValue))
-            {
-               // await DeductPartQuantityAsync(detail.PartId!.Value, detail.Quantity!.Value);
-            }
+            //var details = await _serviceTicketRepo.GetServiceTicketDetailsAsync(id);
+            //foreach (var detail in details.Where(d => d.PartId.HasValue && d.Quantity.HasValue))
+            //{
+            //   // await DeductPartQuantityAsync(detail.PartId!.Value, detail.Quantity!.Value);
+            //}
+
+            var technicalTask = await _serviceTicketRepo.GetTaskByServiceTicketId(serviceTicket.ServiceTicketId);
+
+            technicalTask.TaskStatus = 2;
 
             serviceTicket.ServiceTicketStatus = ServiceTicketStatus.Completed;
             serviceTicket.ModifiedBy = request.ModifiedBy;
             serviceTicket.ModifiedDate = DateTime.UtcNow;
-
+            await _technicalTaskRepo.UpdateAsync(technicalTask.TechnicalTaskId, technicalTask);
             return await _serviceTicketRepo.UpdateAsync(id, serviceTicket);
         }
 
