@@ -12,6 +12,8 @@ namespace SWP.Core.Dtos.BookingDto
         public DateTime BookingTime { get; set; }
 
         public string? VehicleName { get; set; }
+        
+        public string? Reason { get; set; }
 
         public string? Note { get; set; }
     }

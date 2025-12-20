@@ -1,5 +1,6 @@
 using SWP.Core.Dtos;
 using SWP.Core.Dtos.BookingDto;
+using SWP.Core.Entities;
 
 namespace SWP.Core.Interfaces.Services
 {
@@ -11,5 +12,6 @@ namespace SWP.Core.Interfaces.Services
         Task<int> CreateForUserAsync(BookingCreateForUserDto request);
         Task<int> UpdateAsync(int id, BookingCreateDto request);
         Task<int> DeleteAsync(int id);
+        Task<int> ChangeStatusAsync(int id, BookingChangeStatusDto request);
     }
 }

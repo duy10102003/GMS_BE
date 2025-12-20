@@ -1,4 +1,5 @@
 using SWP.Core.Dtos.CustomerDto;
+using SWP.Core.Entities;
 using SWP.Core.Interfaces.Repositories;
 using SWP.Core.Interfaces.Services;
 
@@ -24,6 +25,16 @@ namespace SWP.Core.Services
         {
             return _customerRepo.SearchForSelectAsync(request);
         }
+
+        /// <summary>
+        /// Lay thong tin customer theo userId.
+        /// </summary>
+        public Task<Customer?> GetByUserIdAsync(int userId)
+        {
+            return _customerRepo.GetByUserIdAsync(userId);
+        }
     }
 }
+
+
 

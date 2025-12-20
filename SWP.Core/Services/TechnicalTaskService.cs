@@ -19,17 +19,23 @@ namespace SWP.Core.Services
         private readonly IServiceTicketRepo _serviceTicketRepo;
         private readonly IBaseRepo<ServiceTicketDetail> _serviceTicketDetailRepo;
         private readonly IPartRepo _partRepo;
+        private readonly IInvoiceRepo _invoiceRepo;
+        private readonly IWarrantyRepo _warrantyRepo;
 
         public TechnicalTaskService(
             ITechnicalTaskRepo technicalTaskRepo,
             IServiceTicketRepo serviceTicketRepo,
             IBaseRepo<ServiceTicketDetail> serviceTicketDetailRepo,
-            IPartRepo partRepo)
+            IPartRepo partRepo,
+            IInvoiceRepo invoiceRepo,
+            IWarrantyRepo warrantyRepo)
         {
             _technicalTaskRepo = technicalTaskRepo;
             _serviceTicketRepo = serviceTicketRepo;
             _serviceTicketDetailRepo = serviceTicketDetailRepo;
             _partRepo = partRepo;
+            _invoiceRepo = invoiceRepo;
+            _warrantyRepo = warrantyRepo;
         }
 
         /// <summary>
@@ -78,10 +84,10 @@ namespace SWP.Core.Services
             }
 
             // Kiểm tra status: chỉ cho phép điều chỉnh khi status là PendingTechnicalConfirmation
-            if (serviceTicket.ServiceTicketStatus != ServiceTicketStatus.PendingTechnicalConfirmation)
-            {
-                throw new ValidateException("Chỉ có thể điều chỉnh khi service ticket đang chờ technical xác nhận.");
-            }
+            //if (serviceTicket.ServiceTicketStatus != ServiceTicketStatus.PendingTechnicalConfirmation)
+            //{
+            //    throw new ValidateException("Chỉ có thể điều chỉnh khi service ticket đang chờ technical xác nhận.");
+            //}
 
             // Lấy danh sách service ticket detail hiện tại để rollback part quantity
             var currentDetails = await _serviceTicketRepo.GetServiceTicketDetailsAsync(technicalTask.ServiceTicketId);
@@ -108,7 +114,7 @@ namespace SWP.Core.Services
                 {
                     // Validate part quantity
                     await ValidatePartQuantityAsync(partDto.PartId, partDto.Quantity);
-
+                    await DeductPartQuantityAsync(partDto.PartId, partDto.Quantity);
                     // Tạo service ticket detail
                     var detail = new ServiceTicketDetail
                     {
@@ -198,25 +204,42 @@ namespace SWP.Core.Services
             }
 
             // Kiểm tra status: chỉ cho phép hoàn thành khi status là InProgress
-            if (serviceTicket.ServiceTicketStatus != ServiceTicketStatus.InProgress)
-            {
-                throw new ValidateException("Chỉ có thể hoàn thành khi service ticket đang làm.");
-            }
+            //if (serviceTicket.ServiceTicketStatus != ServiceTicketStatus.InProgress 
+            //    && serviceTicket.ServiceTicketStatus != ServiceTicketStatus.CompletedPayment )
+            //{
+            //    throw new ValidateException("Chỉ có thể hoàn thành khi service ticket đang làm.");
+            //}
 
             // Lấy danh sách parts trong service ticket để deduct quantity
-            var details = await _serviceTicketRepo.GetServiceTicketDetailsAsync(technicalTask.ServiceTicketId);
-            foreach (var detail in details.Where(d => d.PartId.HasValue && d.Quantity.HasValue))
-            {
-                await DeductPartQuantityAsync(detail.PartId!.Value, detail.Quantity!.Value);
-            }
+            //var details = await _serviceTicketRepo.GetServiceTicketDetailsAsync(technicalTask.ServiceTicketId);
+            //foreach (var detail in details.Where(d => d.PartId.HasValue && d.Quantity.HasValue))
+            //{
+            //    await DeductPartQuantityAsync(detail.PartId!.Value, detail.Quantity!.Value);
+            //}
 
             // Cập nhật technical task
             technicalTask.TaskStatus = 2; // Completed
             await _technicalTaskRepo.UpdateAsync(technicalTaskId, technicalTask);
 
-            // Cập nhật service ticket status
-            serviceTicket.ServiceTicketStatus = ServiceTicketStatus.Completed;
-            await _serviceTicketRepo.UpdateAsync(technicalTask.ServiceTicketId, serviceTicket);
+            // Kiểm tra invoice đã thanh toán chưa
+            var invoice = await _invoiceRepo
+                .GetByServiceTicketIdAsync(serviceTicket.ServiceTicketId);
+
+            if (invoice != null && invoice.InvoiceStatus == 1) // Paid
+            {
+                // Đã thanh toán → Closed
+                serviceTicket.ServiceTicketStatus = ServiceTicketStatus.Closed;
+                // tạo bảo hành
+                await _warrantyRepo.CreateWarrantyForServiceTicketAsync(serviceTicket.ServiceTicketId);
+            }
+            else
+            {
+                // Chưa thanh toán → Completed
+                serviceTicket.ServiceTicketStatus = ServiceTicketStatus.Completed;
+            }
+
+            serviceTicket.ModifiedDate = DateTime.UtcNow;
+            await _serviceTicketRepo.UpdateAsync(serviceTicket.ServiceTicketId, serviceTicket);
 
             return 1;
         }
@@ -275,7 +298,10 @@ namespace SWP.Core.Services
             await _partRepo.UpdateAsync(partId, part);
         }
 
+
+
         #endregion
     }
 }
+
 

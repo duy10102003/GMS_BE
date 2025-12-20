@@ -19,8 +19,10 @@ namespace SWP.Core.Dtos.TechnicalTaskDto
         public DateTime? ConfirmedAt { get; set; }
         public byte? ServiceTicketStatus { get; set; }
         public string? CustomerName { get; set; }
+        public string? CustomerPhone { get; set; }
         public string? VehicleName { get; set; }
         public string? VehicleLicensePlate { get; set; }
     }
 }
+
 

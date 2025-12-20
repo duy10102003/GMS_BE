@@ -1,4 +1,5 @@
 using System;
+using SWP.Core.Constants.BookingStatus;
 using SWP.Core.Dtos;
 using SWP.Core.Dtos.BookingDto;
 using SWP.Core.Entities;
@@ -44,6 +45,7 @@ namespace SWP.Core.Services
                 request.CustomerId,
                 request.BookingTime,
                 request.VehicleName,
+                request.Reason,
                 request.Note);
         }
 
@@ -75,6 +77,7 @@ namespace SWP.Core.Services
                 customerId,
                 request.BookingTime,
                 normalizedVehicleName,
+                request.Reason,
                 request.Note);
         }
 
@@ -87,32 +90,13 @@ namespace SWP.Core.Services
             }
 
             ValidateUserBookingRequest(request, user);
-
-            var customer = await _customerRepo.GetByUserIdAsync(request.UserId);
-            if (customer == null)
-            {
-                if (string.IsNullOrWhiteSpace(user.Phone))
-                {
-                    throw new ValidateException("User phone is required to create booking.");
-                }
-
-                customer = new Customer
-                {
-                    UserId = request.UserId,
-                    CustomerName = user.FullName?.Trim(),
-                    CustomerPhone = user.Phone.Trim(),
-                    CustomerEmail = user.Email?.Trim(),
-                    IsDeleted = 0
-                };
-
-                var customerId = Convert.ToInt32(await _customerRepo.InsertAsync(customer));
-                customer.CustomerId = customerId;
-            }
-
+            var customer = await _customerRepo.GetByUserIdAsync(user.UserId);
+                
             return await CreateBookingInternal(
                 customer.CustomerId,
                 request.BookingTime,
                 request.VehicleName?.Trim(),
+                request.Reason,
                 request.Note);
         }
 
@@ -129,7 +113,35 @@ namespace SWP.Core.Services
             existing.CustomerId = request.CustomerId;
             existing.BookingTime = request.BookingTime;
             existing.VehicleName = request.VehicleName?.Trim();
+            existing.Reason = request.Reason?.Trim();
             existing.Note = request.Note?.Trim();
+            existing.ModifiedDate = DateTime.UtcNow;
+
+            return await _bookingRepo.UpdateAsync(id, existing);
+        }
+
+        public async Task<int> ChangeStatusAsync(int id, BookingChangeStatusDto request)
+        {
+            var existing = await _bookingRepo.GetById(id);
+            if (existing == null)
+            {
+                throw new NotFoundException("Khong tim thay booking.");
+            }
+
+            if (!IsValidStatus(request.BookingStatus))
+            {
+                throw new ValidateException("Trang thai booking khong hop le.");
+            }
+
+            existing.BookingStatus = request.BookingStatus;
+            if (request.Reason != null)
+            {
+                existing.Reason = request.Reason.Trim();
+            }
+            if (request.Note != null)
+            {
+                existing.Note = request.Note.Trim();
+            }
             existing.ModifiedDate = DateTime.UtcNow;
 
             return await _bookingRepo.UpdateAsync(id, existing);
@@ -154,15 +166,16 @@ namespace SWP.Core.Services
             }
         }
 
-        private async Task<int> CreateBookingInternal(int customerId, DateTime bookingTime, string? vehicleName, string? note)
+        private async Task<int> CreateBookingInternal(int customerId, DateTime bookingTime, string? vehicleName, string? reason, string? note)
         {
             var entity = new Booking
             {
                 CustomerId = customerId,
                 BookingTime = bookingTime,
                 VehicleName = vehicleName?.Trim(),
+                Reason = reason?.Trim(),
                 Note = note?.Trim(),
-                BookingStatus = 0,
+                BookingStatus = BookingStatus.Pending,
                 CreatedDate = DateTime.UtcNow,
                 IsDeleted = 0
             };
@@ -236,6 +249,16 @@ namespace SWP.Core.Services
             {
                 return false;
             }
+        }
+
+        private static bool IsValidStatus(byte status)
+        {
+            return status == BookingStatus.Pending
+                   || status == BookingStatus.Confirmed
+                   || status == BookingStatus.Declined
+                   || status == BookingStatus.Cancelled
+                   || status == BookingStatus.Completed
+                   || status == BookingStatus.NoShow;
         }
     }
 }

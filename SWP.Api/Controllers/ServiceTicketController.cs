@@ -252,6 +252,44 @@ namespace SWP.Api.Controllers
         }
 
         #endregion
+
+        #region Customer Operations 
+        /// <summary>
+        /// Chuyển status sang CustomerConfirm (7)
+        /// </summary>
+        /// <param name="id">ID của Service Ticket</param>
+        /// <param name="request">Thông tin thay đổi</param>
+        /// <returns>Số dòng bị ảnh hưởng</returns>
+        [HttpPut("{id}/status/customerConfirm")]
+        public async Task<IActionResult> ChangeToCustomerConfirm(int id)
+        {
+            var result = await _serviceTicketService.ChangeToCustomerConfirmationAsync(id);
+            return Ok(ApiResponse<object>.SuccessResponse(new { affectedRows = result }, "Chuyển trạng thái thành công"));
+        }
+
+        /// <summary>
+        /// Lấy danh sách Service Ticket có phân trang
+        /// </summary>
+        /// <param name="filter">Filter và phân trang</param>
+        /// <returns>Danh sách Service Ticket</returns>
+        [HttpPost("{id}/customer/paging")]
+        public async Task<IActionResult> GetPagingServiceTicketForCustomerAsync(int id, [FromBody] ServiceTicketFilterDtoRequest filter)
+        {
+            var result = await _serviceTicketService.GetPagingServiceTicketForCustomerAsync(id,filter);
+            var response = ApiResponse<object>.SuccessResponse(
+                new
+                {
+                    items = result.Items,
+                    total = result.Total,
+                    page = result.Page,
+                    pageSize = result.PageSize
+                },
+                "Lấy danh sách service ticket thành công"
+            );
+            return Ok(response);
+        }
+        #endregion
+
     }
 }
 

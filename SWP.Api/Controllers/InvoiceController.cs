@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using SWP.Core.Dtos;
 using SWP.Core.Dtos.InvoiceDto;
+using SWP.Core.Interfaces.Repositories;
 using SWP.Core.Interfaces.Services;
 
 namespace SWP.Api.Controllers
@@ -14,7 +15,7 @@ namespace SWP.Api.Controllers
     public class InvoiceController : ControllerBase
     {
         private readonly IInvoiceService _invoiceService;
-
+        private readonly IInvoiceRepo _invoiceRepo;
         public InvoiceController(IInvoiceService invoiceService)
         {
             _invoiceService = invoiceService;
@@ -42,6 +43,37 @@ namespace SWP.Api.Controllers
         }
 
         /// <summary>
+        /// Lấy danh sách Invoice theo UserId (thông qua Customer.UserId)
+        /// </summary>
+        /// <param name="userId">ID của user</param>
+        /// <param name="page">Trang hiện tại</param>
+        /// <param name="pageSize">Số bản ghi mỗi trang</param>
+        /// <returns>Danh sách Invoice</returns>
+        [HttpGet("by-user/{userId:int}")]
+        public async Task<IActionResult> GetByUserId(int userId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        {
+            var filter = new InvoiceFilterDtoRequest
+            {
+                
+                Page = page,
+                PageSize = pageSize
+            };
+
+            var result = await _invoiceService.GetPagingAsync(filter);
+
+            return Ok(ApiResponse<object>.SuccessResponse(
+                new
+                {
+                    items = result.Items,
+                    total = result.Total,
+                    page = result.Page,
+                    pageSize = result.PageSize
+                },
+                "Lấy danh sách invoice theo user thành công"
+            ));
+        }
+
+        /// <summary>
         /// Lấy Invoice theo ID
         /// </summary>
         /// <param name="id">ID của Invoice</param>
@@ -65,6 +97,38 @@ namespace SWP.Api.Controllers
             return CreatedAtAction(nameof(GetById), new { id }, 
                 ApiResponse<object>.SuccessResponse(new { invoiceId = id }, "Tạo invoice thành công"));
         }
+
+        /// <summary>
+        /// Chuyển trạng thái Invoice sang đã thanh toán (status = 1)
+        /// </summary>
+        /// <param name="id">ID của Invoice</param>
+        /// <param name="modifiedBy">ID của người thực hiện</param>
+        /// <returns>Kết quả</returns>
+        [HttpPut("{id}/status/paid")]
+        public async Task<IActionResult> ChangeStatusToPaid(int id, [FromQuery] int modifiedBy)
+        {
+            await _invoiceService.ChangeStatusToPaidAsync(id, modifiedBy);
+            return Ok(ApiResponse<object>.SuccessResponse(null, "Chuyển trạng thái invoice sang đã thanh toán thành công"));
+        }
+        [HttpPost("{id}/customer/paging")]
+        public async Task<IActionResult> GetInvoicesForCustomer(
+            int id,
+            [FromBody] InvoiceFilterDtoRequest filter)
+        {
+            var result = await _invoiceRepo.GetPagingInvoiceForCustomerAsync(id, filter);
+            return Ok(ApiResponse<object>.SuccessResponse(
+                 new
+                 {
+                     items = result.Items,
+                     total = result.Total,
+                     page = result.Page,
+                     pageSize = result.PageSize
+                 },
+                 "Lấy danh sách invoice thành công"
+             ));
+        }
+
     }
 }
+
 

@@ -31,6 +31,8 @@ namespace SWP.Infrastructure.Repositories
             var parameters = new DynamicParameters();
             var whereConditions = new List<string>();
 
+
+            
             // Base query
             var baseSelect = @"
                 SELECT 
@@ -40,6 +42,12 @@ namespace SWP.Infrastructure.Repositories
                 FROM garage_service gs
                 WHERE gs.is_deleted = 0";
 
+            // Giữ lại keyword để tương thích
+            if (!string.IsNullOrWhiteSpace(filter.KeyWord))
+            {
+                whereConditions.Add("(LOWER(gs.garage_service_name)) LIKE @keyword");
+                parameters.Add("@keyword", $"%{filter.KeyWord.Trim().ToLower()}%");
+            }
             // Xử lý ColumnFilters
             if (filter.ColumnFilters != null && filter.ColumnFilters.Any())
             {

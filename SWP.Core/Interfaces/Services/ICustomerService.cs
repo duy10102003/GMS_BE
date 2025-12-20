@@ -15,6 +15,15 @@ namespace SWP.Core.Interfaces.Services
         /// <param name="request">Request tìm kiếm</param>
         /// <returns>Danh sách Customer</returns>
         Task<List<CustomerSelectDto>> SearchForSelectAsync(CustomerSearchRequest request);
+
+        /// <summary>
+        /// Lay thong tin customer theo userId.
+        /// </summary>
+        /// <param name="userId">Id cua user</param>
+        /// <returns>Customer neu ton tai</returns>
+        Task<Customer?> GetByUserIdAsync(int userId);
     }
 }
+
+
 

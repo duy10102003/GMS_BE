@@ -19,6 +19,11 @@ namespace SWP.Core.Dtos.GarageServiceDto
         public int PageSize { get; set; } = 10;
 
         /// <summary>
+        /// Key để search
+        /// </summary>
+        public string? KeyWord { get; set; }
+
+        /// <summary>
         /// Danh sách filter theo cột
         /// </summary>
         public List<ColumnFilterDto>? ColumnFilters { get; set; }
@@ -29,5 +34,6 @@ namespace SWP.Core.Dtos.GarageServiceDto
         public List<ColumnSortDto>? ColumnSorts { get; set; }
     }
 }
+
 
 

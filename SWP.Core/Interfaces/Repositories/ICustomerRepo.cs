@@ -9,6 +9,7 @@ namespace SWP.Core.Interfaces.Repositories
     /// </summary>
     public interface ICustomerRepo : IBaseRepo<Customer>
     {
+        Task<Customer?> GetByPhoneAsync(string phone);
         /// <summary>
         /// Tìm kiếm Customer cho select (với search keyword)
         /// </summary>
@@ -33,3 +34,4 @@ namespace SWP.Core.Interfaces.Repositories
         Task<Customer?> FindByIdentityAsync(string customerName, string customerPhone, string? customerEmail);
     }
 }
+

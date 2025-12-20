@@ -14,6 +14,11 @@ namespace SWP.Core.Dtos.TechnicalTaskDto
         public int? AssignedToTechnical { get; set; }
 
         /// <summary>
+        /// Key để search
+        /// </summary>
+        public string? KeyWord { get; set; }
+
+        /// <summary>
         /// Trạng thái task
         /// </summary>
         public byte? TaskStatus { get; set; }
@@ -24,4 +29,5 @@ namespace SWP.Core.Dtos.TechnicalTaskDto
         public byte? ServiceTicketStatus { get; set; }
     }
 }
+
 

@@ -45,6 +45,7 @@ namespace SWP.Infrastructure.Repositories
                     tt.confirmed_at AS ConfirmedAt,
                     st.service_ticket_status AS ServiceTicketStatus,
                     c.customer_name AS CustomerName,
+                    c.customer_phone AS CustomerPhone,
                     v.vehicle_name AS VehicleName,
                     v.vehicle_license_plate AS VehicleLicensePlate
                 FROM `technical_task` tt
@@ -55,6 +56,12 @@ namespace SWP.Infrastructure.Repositories
                 LEFT JOIN `users` u2 ON tt.confirmed_by = u2.user_id
                 WHERE tt.is_deleted = 0 AND st.is_deleted = 0";
 
+            // Giữ lại keyword để tương thích
+            if (!string.IsNullOrWhiteSpace(filter.KeyWord))
+            {
+                whereConditions.Add("(LOWER(st.service_ticket_code)) LIKE @keyword OR (LOWER(c.customer_name)) LIKE @keyword OR (LOWER(c.customer_phone)) LIKE @keyword ");
+                parameters.Add("@keyword", $"%{filter.KeyWord.Trim().ToLower()}%");
+            }
             // Filter theo technical staff
             if (filter.AssignedToTechnical.HasValue)
             {
@@ -86,7 +93,7 @@ namespace SWP.Infrastructure.Repositories
             else
             {
                 // Mặc định chỉ lấy service ticket chưa hoàn thành
-                whereConditions.Add("st.service_ticket_status != 3"); // != Completed
+                whereConditions.Add("st.service_ticket_status != 3 && st.service_ticket_status != 5 "); // != Completed
             }
 
             // Build WHERE clause
@@ -99,6 +106,8 @@ namespace SWP.Infrastructure.Repositories
                 SELECT COUNT(1)
                 FROM `technical_task` tt
                 INNER JOIN `service_ticket` st ON tt.service_ticket_id = st.service_ticket_id
+                LEFT JOIN `vehicle` v ON st.vehicle_id = v.vehicle_id
+                LEFT JOIN `customer` c ON v.customer_id = c.customer_id
                 WHERE tt.is_deleted = 0 AND st.is_deleted = 0{whereClause}";
 
             // Sort
