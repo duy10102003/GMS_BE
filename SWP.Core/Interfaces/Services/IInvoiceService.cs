@@ -37,6 +37,8 @@ namespace SWP.Core.Interfaces.Services
         /// <param name="modifiedBy">ID của người thực hiện</param>
         /// <returns>Task</returns>
         Task ChangeStatusToPaidAsync(int id, int modifiedBy);
+
+        Task<PagedResult<InvoiceListItemDto>> GetPagingInvoiceForCustomerAsync(int userId, InvoiceFilterDtoRequest filter);
     }
 }
 

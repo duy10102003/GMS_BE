@@ -358,72 +358,66 @@ namespace SWP.Infrastructure.Repositories
                 new { InvoiceId = invoiceId }
             );
         }
-        public async Task<PagedResult<InvoiceListItemDto>> GetPagingInvoiceForCustomerAsync(
-            int userId,
-            InvoiceFilterDtoRequest filter)
+        /// <summary>
+        /// Lấy danh sách Invoice có phân trang
+        /// </summary>
+        public async Task<PagedResult<InvoiceListItemDto>> GetPagingInvoiceForCustomerAsync(int userId, InvoiceFilterDtoRequest filter)
         {
-            filter ??= new InvoiceFilterDtoRequest();
-
-            if (filter.Page <= 0)
-                filter.Page = 1;
-
-            if (filter.PageSize <= 0)
-                filter.PageSize = 10;
             var parameters = new DynamicParameters();
             var whereConditions = new List<string>();
-
-            // 1. Lấy customerId từ userId
             using var connection = new MySqlConnection(_connection);
+            // Base query
+            var baseSelect = @"SELECT 
+                i.invoice_id AS InvoiceId,
+                i.service_ticket_id AS ServiceTicketId,
+                st.service_ticket_code AS ServiceTicketCode,
+                i.customer_id AS CustomerId,
+                c.customer_name AS CustomerName,
+                c.customer_phone AS CustomerPhone,
+                i.issue_date AS IssueDate,
+                i.parts_amount AS PartsAmount,
+                i.garage_service_amount AS GarageServiceAmount,
+                i.tax_amount AS TaxAmount,
+                i.discount_amount AS DiscountAmount,
+                i.total_amount AS TotalAmount,
+                i.invoice_status AS InvoiceStatus,
+                i.invoice_code AS InvoiceCode
+            FROM `invoice` i
+            INNER JOIN `service_ticket` st ON i.service_ticket_id = st.service_ticket_id
+            LEFT JOIN `customer` c ON i.customer_id = c.customer_id
+            WHERE i.is_deleted = 0";
+
 
             var customerId = await connection.ExecuteScalarAsync<int?>(
-                @"SELECT customer_id 
-          FROM customer 
-          WHERE user_id = @UserId 
-            AND is_deleted = 0
-          LIMIT 1",
-                new { UserId = userId }
-            );
+    "SELECT customer_id FROM customer WHERE user_id = @UserId AND is_deleted = 0 LIMIT 1",
+     new { UserId = userId }
+);
+           
 
-            if (!customerId.HasValue)
+            // Giữ lại keyword để tương thích
+            if (!string.IsNullOrWhiteSpace(filter.KeyWord))
             {
-                return new PagedResult<InvoiceListItemDto>
-                {
-                    Items = Enumerable.Empty<InvoiceListItemDto>(),
-                    Total = 0,
-                    Page = filter.Page,
-                    PageSize = filter.PageSize
-                };
+                whereConditions.Add("LOWER(st.service_ticket_code) LIKE @keyword OR LOWER(c.customer_name) LIKE @keyword OR LOWER(c.customer_phone) LIKE @keyword ");
+                parameters.Add("@keyword", $"%{filter.KeyWord.Trim().ToLower()}%");
             }
-            
+           
+               
 
-            // 2. Base SELECT
-            var baseSelect = @"SELECT 
-                    i.invoice_id AS InvoiceId,
-                    i.service_ticket_id AS ServiceTicketId,
-                    st.service_ticket_code AS ServiceTicketCode,
-                    i.customer_id AS CustomerId,
-                    c.customer_name AS CustomerName,
-                    c.customer_phone AS CustomerPhone,
-                    i.issue_date AS IssueDate,
-                    i.parts_amount AS PartsAmount,
-                    i.garage_service_amount AS GarageServiceAmount,
-                    i.tax_amount AS TaxAmount,
-                    i.discount_amount AS DiscountAmount,
-                    i.total_amount AS TotalAmount,
-                    i.invoice_status AS InvoiceStatus,
-                    i.invoice_code AS InvoiceCode
-                FROM `invoice` i
-                INNER JOIN `service_ticket` st ON i.service_ticket_id = st.service_ticket_id
-                LEFT JOIN `customer` c ON i.customer_id = c.customer_id
-                WHERE i.is_deleted = 0 and c.customer_id = @CustomerId";
+            //// Filter theo user (thông qua bảng customer)
+            //if (filter.UserId.HasValue)
+            //{
+            //    whereConditions.Add("c.user_id = @UserId");
+            //    parameters.Add("@UserId", filter.UserId.Value);
+            //}
 
-            // 3. Filter thêm (status, date...)
+            // Filter theo status
             if (filter.InvoiceStatus.HasValue)
             {
                 whereConditions.Add("i.invoice_status = @InvoiceStatus");
                 parameters.Add("@InvoiceStatus", filter.InvoiceStatus.Value);
             }
 
+            // Filter theo date range
             if (filter.FromDate.HasValue)
             {
                 whereConditions.Add("i.issue_date >= @FromDate");
@@ -436,61 +430,35 @@ namespace SWP.Infrastructure.Repositories
                 parameters.Add("@ToDate", filter.ToDate.Value);
             }
 
+            whereConditions.Add("i.customer_id = @CustomerId");
+            
+            // Build WHERE clause
             var whereClause = whereConditions.Any()
                 ? " AND " + string.Join(" AND ", whereConditions)
                 : "";
 
-            // 4. Count
+            // Count query
             var countSql = $@"
-        SELECT COUNT(1)
-        FROM invoice i
-        WHERE i.is_deleted = 0
-          AND i.customer_id = @CustomerId
-          {whereClause}
-    ";
+    SELECT COUNT(DISTINCT i.invoice_id)
+    FROM `invoice` i
+    INNER JOIN `service_ticket` st 
+        ON i.service_ticket_id = st.service_ticket_id
+    LEFT JOIN `customer` c 
+        ON i.customer_id = c.customer_id
+    WHERE i.is_deleted = 0{whereClause}";
 
-            // 5. Sort
-            var orderBy = "ORDER BY i.issue_date DESC";
+            // Sort
+            var orderBy = "ORDER BY i.invoice_id DESC";
 
-            if (filter.ColumnSorts != null && filter.ColumnSorts.Any())
-            {
-                var sortParts = filter.ColumnSorts
-                    .Where(s => !string.IsNullOrWhiteSpace(s.ColumnName))
-                    .Select(s =>
-                    {
-                        var col = s.ColumnName.ToLower() switch
-                        {
-                            "issuedate" => "i.issue_date",
-                            "totalamount" => "i.total_amount",
-                            "invoicestatus" => "i.invoice_status",
-                            _ => "i.invoice_id"
-                        };
-
-                        var dir = s.SortDirection?.ToUpper() == "ASC" ? "ASC" : "DESC";
-                        return $"{col} {dir}";
-                    });
-
-                if (sortParts.Any())
-                {
-                    orderBy = "ORDER BY " + string.Join(", ", sortParts);
-                }
-            }
-
-            // 6. Paging
+            // Pagination
             var offset = (filter.Page - 1) * filter.PageSize;
             parameters.Add("@Offset", offset);
             parameters.Add("@PageSize", filter.PageSize);
             parameters.Add("@CustomerId", customerId.Value);
 
-            var dataSql = $@"
-        {baseSelect}
-        {whereClause}
-        {orderBy}
-        LIMIT @PageSize OFFSET @Offset
-    ";
+            var dataSql = $"{baseSelect}{whereClause} {orderBy} LIMIT @PageSize OFFSET @Offset";
 
-            // 7. Execute
-            var total = await connection.ExecuteScalarAsync<int>(countSql, parameters);
+            var total = await connection.QuerySingleAsync<int>(countSql, parameters);
             var items = await connection.QueryAsync<InvoiceListItemDto>(dataSql, parameters);
 
             return new PagedResult<InvoiceListItemDto>

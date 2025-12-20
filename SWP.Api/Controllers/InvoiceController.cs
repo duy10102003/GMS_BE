@@ -15,7 +15,7 @@ namespace SWP.Api.Controllers
     public class InvoiceController : ControllerBase
     {
         private readonly IInvoiceService _invoiceService;
-        private readonly IInvoiceRepo _invoiceRepo;
+       // private readonly IInvoiceRepo _invoiceRepo;
         public InvoiceController(IInvoiceService invoiceService)
         {
             _invoiceService = invoiceService;
@@ -49,29 +49,29 @@ namespace SWP.Api.Controllers
         /// <param name="page">Trang hiện tại</param>
         /// <param name="pageSize">Số bản ghi mỗi trang</param>
         /// <returns>Danh sách Invoice</returns>
-        [HttpGet("by-user/{userId:int}")]
-        public async Task<IActionResult> GetByUserId(int userId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
-        {
-            var filter = new InvoiceFilterDtoRequest
-            {
+        //[HttpGet("by-user/{userId:int}")]
+        //public async Task<IActionResult> GetByUserId(int userId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        //{
+        //    var filter = new InvoiceFilterDtoRequest
+        //    {
                 
-                Page = page,
-                PageSize = pageSize
-            };
+        //        Page = page,
+        //        PageSize = pageSize
+        //    };
 
-            var result = await _invoiceService.GetPagingAsync(filter);
+        //    var result = await _invoiceService.GetPagingAsync(filter);
 
-            return Ok(ApiResponse<object>.SuccessResponse(
-                new
-                {
-                    items = result.Items,
-                    total = result.Total,
-                    page = result.Page,
-                    pageSize = result.PageSize
-                },
-                "Lấy danh sách invoice theo user thành công"
-            ));
-        }
+        //    return Ok(ApiResponse<object>.SuccessResponse(
+        //        new
+        //        {
+        //            items = result.Items,
+        //            total = result.Total,
+        //            page = result.Page,
+        //            pageSize = result.PageSize
+        //        },
+        //        "Lấy danh sách invoice theo user thành công"
+        //    ));
+        //}
 
         /// <summary>
         /// Lấy Invoice theo ID
@@ -115,17 +115,20 @@ namespace SWP.Api.Controllers
             int id,
             [FromBody] InvoiceFilterDtoRequest filter)
         {
-            var result = await _invoiceRepo.GetPagingInvoiceForCustomerAsync(id, filter);
+            filter ??= new InvoiceFilterDtoRequest();
+
+            var result = await _invoiceService.GetPagingInvoiceForCustomerAsync(id, filter);
+
             return Ok(ApiResponse<object>.SuccessResponse(
-                 new
-                 {
-                     items = result.Items,
-                     total = result.Total,
-                     page = result.Page,
-                     pageSize = result.PageSize
-                 },
-                 "Lấy danh sách invoice thành công"
-             ));
+                new
+                {
+                    items = result.Items,
+                    total = result.Total,
+                    page = result.Page,
+                    pageSize = result.PageSize
+                },
+                "Lấy danh sách invoice thành công"
+            ));
         }
 
     }

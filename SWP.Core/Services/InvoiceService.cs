@@ -206,6 +206,16 @@ namespace SWP.Core.Services
                 await _serviceTicketRepo.UpdateAsync(serviceTicket.ServiceTicketId, serviceTicket);
             }
         }
+
+        public Task<PagedResult<InvoiceListItemDto>> GetPagingInvoiceForCustomerAsync(int userId, InvoiceFilterDtoRequest filter)
+        {
+            var result = _invoiceRepo.GetPagingInvoiceForCustomerAsync(userId,filter);
+            if (result == null)
+            {
+                throw new NotFoundException("Không tìm thấy danh sách invoice.");
+            }
+            return result;
+        }
     }
 }
 
