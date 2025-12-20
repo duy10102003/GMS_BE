@@ -15,7 +15,7 @@ namespace SWP.Core.UnitTest.ServiceTicketService.CustomerOperation
         private Mock<IServiceTicketRepo> _serviceTicketRepoMock;
         private SWP.Core.Services.ServiceTicketService _service;
         
-        // Unused
+        
         private Mock<IBaseRepo<User>> _userRepoMock;
         private Mock<IBaseRepo<Vehicle>> _vehicleRepoMock;
         private Mock<IBaseRepo<Part>> _partRepoMock;

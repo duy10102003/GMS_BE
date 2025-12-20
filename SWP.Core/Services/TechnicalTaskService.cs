@@ -114,7 +114,7 @@ namespace SWP.Core.Services
                 {
                     // Validate part quantity
                     await ValidatePartQuantityAsync(partDto.PartId, partDto.Quantity);
-
+                    await DeductPartQuantityAsync(partDto.PartId, partDto.Quantity);
                     // Tạo service ticket detail
                     var detail = new ServiceTicketDetail
                     {
@@ -211,11 +211,11 @@ namespace SWP.Core.Services
             //}
 
             // Lấy danh sách parts trong service ticket để deduct quantity
-            var details = await _serviceTicketRepo.GetServiceTicketDetailsAsync(technicalTask.ServiceTicketId);
-            foreach (var detail in details.Where(d => d.PartId.HasValue && d.Quantity.HasValue))
-            {
-                await DeductPartQuantityAsync(detail.PartId!.Value, detail.Quantity!.Value);
-            }
+            //var details = await _serviceTicketRepo.GetServiceTicketDetailsAsync(technicalTask.ServiceTicketId);
+            //foreach (var detail in details.Where(d => d.PartId.HasValue && d.Quantity.HasValue))
+            //{
+            //    await DeductPartQuantityAsync(detail.PartId!.Value, detail.Quantity!.Value);
+            //}
 
             // Cập nhật technical task
             technicalTask.TaskStatus = 2; // Completed
