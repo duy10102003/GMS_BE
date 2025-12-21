@@ -142,6 +142,7 @@ namespace SWP.Core.UnitTest.BookingService
             _bookingRepoMock.Verify(x => x.InsertAsync(It.IsAny<Booking>()), Times.Never);
         }
 
+
         [Test]
         public void CreateForGuestAsync_WhenEmailInvalid_ShouldThrowValidateException()
         {
@@ -224,5 +225,68 @@ namespace SWP.Core.UnitTest.BookingService
                 )),
                 Times.Once);
         }
+        [Test]
+        public void CreateForGuestAsync_WhenMissingCustomerPhone_ShouldThrowValidateException()
+        {
+            var request = new BookingCreateGuestDto
+            {
+                CustomerName = "A",
+                CustomerPhone = " ",
+                CustomerEmail = "a@test.com",
+                BookingTime = new DateTime(2025, 3, 4),
+                VehicleName = "SUV",
+                Reason = "Check",
+                Note = "Note"
+            };
+
+            Func<Task> act = async () => await _service.CreateForGuestAsync(request);
+
+            act.Should().ThrowAsync<ValidateException>();
+            _customerRepoMock.Verify(x => x.FindByIdentityAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            _bookingRepoMock.Verify(x => x.InsertAsync(It.IsAny<Booking>()), Times.Never);
+        }
+
+        [Test]
+        public void CreateForGuestAsync_WhenMissingCustomerEmail_ShouldThrowValidateException()
+        {
+            var request = new BookingCreateGuestDto
+            {
+                CustomerName = "A",
+                CustomerPhone = "0123456789",
+                CustomerEmail = " ",
+                BookingTime = new DateTime(2025, 3, 4),
+                VehicleName = "SUV",
+                Reason = "Check",
+                Note = "Note"
+            };
+
+            Func<Task> act = async () => await _service.CreateForGuestAsync(request);
+
+            act.Should().ThrowAsync<ValidateException>();
+            _customerRepoMock.Verify(x => x.FindByIdentityAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            _bookingRepoMock.Verify(x => x.InsertAsync(It.IsAny<Booking>()), Times.Never);
+        }
+
+        [Test]
+        public void CreateForGuestAsync_WhenMissingVehicleName_ShouldThrowValidateException()
+        {
+            var request = new BookingCreateGuestDto
+            {
+                CustomerName = "A",
+                CustomerPhone = "0123456789",
+                CustomerEmail = "a@test.com",
+                BookingTime = new DateTime(2025, 3, 4),
+                VehicleName = " ",
+                Reason = "Check",
+                Note = "Note"
+            };
+
+            Func<Task> act = async () => await _service.CreateForGuestAsync(request);
+
+            act.Should().ThrowAsync<ValidateException>();
+            _customerRepoMock.Verify(x => x.FindByIdentityAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            _bookingRepoMock.Verify(x => x.InsertAsync(It.IsAny<Booking>()), Times.Never);
+        }
+
     }
 }
