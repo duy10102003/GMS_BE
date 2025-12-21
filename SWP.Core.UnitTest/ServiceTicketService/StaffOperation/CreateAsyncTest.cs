@@ -183,7 +183,7 @@ namespace SWP.Core.UnitTest.ServiceTicketService.StaffOperation
             var request = new ServiceTicketCreateDto 
             { 
                 CreatedBy = 1, 
-                CustomerInfo = new CustomerInfoDto { CustomerPhone = "123", UserId = 999 } 
+                CustomerInfo = new CustomerInfoDto { CustomerPhone = "0987654321", UserId = 999 } 
             };
             
             _userRepoMock.Setup(x => x.GetById(1)).ReturnsAsync(new User());
@@ -200,7 +200,7 @@ namespace SWP.Core.UnitTest.ServiceTicketService.StaffOperation
             var request = new ServiceTicketCreateDto 
             { 
                 CreatedBy = 1, 
-                CustomerInfo = new CustomerInfoDto { CustomerPhone = "123" } 
+                CustomerInfo = new CustomerInfoDto { CustomerPhone = "0987654321" } 
             };
             
             _userRepoMock.Setup(x => x.GetById(1)).ReturnsAsync(new User());
@@ -241,7 +241,7 @@ namespace SWP.Core.UnitTest.ServiceTicketService.StaffOperation
             { 
                 CreatedBy = 1, 
                 CustomerId = 1, 
-                VehicleInfo = new VehicleInfoDto { VehicleName = "Car", VehicleLicensePlate = "ABC" }
+                VehicleInfo = new VehicleInfoDto { VehicleName = "Car", VehicleLicensePlate = "A-1" }
             };
             
             _userRepoMock.Setup(x => x.GetById(1)).ReturnsAsync(new User());
@@ -333,7 +333,7 @@ namespace SWP.Core.UnitTest.ServiceTicketService.StaffOperation
              var request = new ServiceTicketCreateDto 
              { 
                  CreatedBy = 1, 
-                 CustomerInfo = new CustomerInfoDto { CustomerPhone = "0900" },
+                 CustomerInfo = new CustomerInfoDto { CustomerPhone = "0987654321" },
                  VehicleInfo = new VehicleInfoDto { VehicleName = "Car", VehicleLicensePlate = "A-1" }
              };
              
@@ -345,7 +345,7 @@ namespace SWP.Core.UnitTest.ServiceTicketService.StaffOperation
              var result = await _service.CreateAsync(request);
              
              result.Should().Be(100);
-             _customerRepoMock.Verify(x => x.InsertAsync(It.Is<Customer>(c => c.CustomerPhone == "0900")), Times.Once);
+             _customerRepoMock.Verify(x => x.InsertAsync(It.Is<Customer>(c => c.CustomerPhone == "0987654321")), Times.Once);
              _vehicleRepoMock.Verify(x => x.InsertAsync(It.Is<Vehicle>(v => v.CustomerId == 10)), Times.Once); // Linked to new customer
              _serviceTicketRepoMock.Verify(x => x.InsertAsync(It.Is<ServiceTicket>(s => s.VehicleId == 20)), Times.Once);
         }
@@ -386,7 +386,7 @@ namespace SWP.Core.UnitTest.ServiceTicketService.StaffOperation
         {
             var request = new ServiceTicketCreateDto 
             { 
-                 CreatedBy = 1, CustomerId = 1, VehicleId = 1, AssignedToTechnical = 5, AssignDescription = "Fix it"
+                 CreatedBy = 1, CustomerId = 1, VehicleId = 1, AssignedToTechnical = 5, AssignDescription = "Xe hỏng phanh, hỏng bugi"
             };
              
             _userRepoMock.Setup(x => x.GetById(1)).ReturnsAsync(new User());
@@ -402,7 +402,7 @@ namespace SWP.Core.UnitTest.ServiceTicketService.StaffOperation
             var result = await _service.CreateAsync(request);
              
             result.Should().Be(100);
-            _technicalTaskRepoMock.Verify(x => x.InsertAsync(It.Is<TechnicalTask>(t => t.AssignedToTechnical == 5 && t.Description == "Fix it")), Times.Once);
+            _technicalTaskRepoMock.Verify(x => x.InsertAsync(It.Is<TechnicalTask>(t => t.AssignedToTechnical == 5 && t.Description == "Xe hỏng phanh, hỏng bugi")), Times.Once);
         }
     }
 }
