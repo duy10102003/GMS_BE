@@ -79,14 +79,15 @@ namespace SWP.Core.UnitTest.BookingService
             var request = new BookingCreateGuestDto
             {
                 CustomerName = "B",
-                CustomerPhone = "0123",
+                CustomerPhone = "0123456987",
                 CustomerEmail = "b@test.com",
                 BookingTime = new DateTime(2025, 2, 2),
-                VehicleName = "SUV"
+                VehicleName = "SUV",
+                Reason = "Check"
             };
 
             _customerRepoMock
-                .Setup(x => x.FindByIdentityAsync("B", "0123", "b@test.com"))
+                .Setup(x => x.FindByIdentityAsync("B", "0123456987", "b@test.com"))
                 .ReturnsAsync((Customer)null!);
 
             _customerRepoMock
@@ -103,7 +104,7 @@ namespace SWP.Core.UnitTest.BookingService
             _customerRepoMock.Verify(
                 x => x.InsertAsync(It.Is<Customer>(c =>
                     c.CustomerName == "B" &&
-                    c.CustomerPhone == "0123" &&
+                    c.CustomerPhone == "0123456987" &&
                     c.CustomerEmail == "b@test.com" &&
                     c.IsDeleted == 0
                 )),
@@ -113,6 +114,7 @@ namespace SWP.Core.UnitTest.BookingService
                     b.CustomerId == 77 &&
                     b.BookingTime == request.BookingTime &&
                     b.VehicleName == "SUV" &&
+                    b.Reason == "Check" &&
                     b.BookingStatus == BookingStatus.Pending &&
                     b.IsDeleted == 0
                 )),
@@ -125,10 +127,12 @@ namespace SWP.Core.UnitTest.BookingService
             var request = new BookingCreateGuestDto
             {
                 CustomerName = " ",
-                CustomerPhone = "0123",
+                CustomerPhone = "0123456789",
                 CustomerEmail = "a@test.com",
                 BookingTime = new DateTime(2025, 3, 3),
-                VehicleName = "SUV"
+                VehicleName = "SUV",
+                Reason = "Check",
+                Note = "Note"
             };
 
             Func<Task> act = async () => await _service.CreateForGuestAsync(request);
@@ -144,10 +148,12 @@ namespace SWP.Core.UnitTest.BookingService
             var request = new BookingCreateGuestDto
             {
                 CustomerName = "A",
-                CustomerPhone = "0123",
+                CustomerPhone = "0123456987",
                 CustomerEmail = "not-an-email",
                 BookingTime = new DateTime(2025, 4, 4),
-                VehicleName = "SUV"
+                VehicleName = "SUV",
+                Reason = "Check",
+                Note = "Note"
             };
 
             Func<Task> act = async () => await _service.CreateForGuestAsync(request);
@@ -163,10 +169,12 @@ namespace SWP.Core.UnitTest.BookingService
             var request = new BookingCreateGuestDto
             {
                 CustomerName = "A",
-                CustomerPhone = "0123",
+                CustomerPhone = "0123456987",
                 CustomerEmail = "a@test.com",
                 BookingTime = default,
-                VehicleName = "SUV"
+                VehicleName = "SUV",
+                Reason = "Check",
+                Note = "Note"
             };
 
             Func<Task> act = async () => await _service.CreateForGuestAsync(request);
